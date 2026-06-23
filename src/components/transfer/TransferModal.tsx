@@ -28,7 +28,6 @@ export default function TransferModal({
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferring, setTransferring] = useState(false);
-  const [transferring, setTransferring] = useState(false);
 
   // Fetch students when source sheet changes
   const fetchStudents = useCallback(async () => {

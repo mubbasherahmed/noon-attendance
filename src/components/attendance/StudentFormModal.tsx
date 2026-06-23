@@ -26,7 +26,6 @@ export function StudentFormModal({
   const [rollNumber, setRollNumber] = useState("");
   const [sheetName, setSheetName] = useState(defaultSheet);
   const [campusName, setCampusName] = useState(defaultCampus);
-  const [attendanceCounter, setAttendanceCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,14 +36,12 @@ export function StudentFormModal({
       setRollNumber(initialData.rollNumber);
       setSheetName(initialData.sheetName);
       setCampusName(initialData.campusName);
-      setAttendanceCounter(initialData.attendanceCounter);
     } else {
       setStudentId("");
       setStudentName("");
       setRollNumber("");
       setSheetName(defaultSheet);
       setCampusName(defaultCampus);
-      setAttendanceCounter(0);
     }
   }, [initialData, defaultCampus, defaultSheet, isOpen]);
 
@@ -59,7 +56,6 @@ export function StudentFormModal({
       rollNumber,
       sheetName,
       campusName,
-      attendanceCounter,
       ...(initialData ? { rowIndex: initialData.rowIndex } : {}),
     };
 
@@ -139,20 +135,6 @@ export function StudentFormModal({
             />
           </div>
         </div>
-
-        {initialData && (
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Attendance Counter</label>
-            <input
-              type="number"
-              min="0"
-              required
-              value={attendanceCounter}
-              onChange={(e) => setAttendanceCounter(parseInt(e.target.value, 10) || 0)}
-              className="w-full bg-surface border border-border rounded-xl px-4 py-2 text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-          </div>
-        )}
 
         <div className="flex justify-end gap-3 mt-6">
           <button
