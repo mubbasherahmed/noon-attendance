@@ -3,16 +3,40 @@
 import React, { useState, useCallback } from "react";
 import { Student } from "@/lib/types";
 import { useApp } from "@/context/AppContext";
-import { Plus, Minus, User } from "lucide-react";
+import { Plus, Minus, User, Edit2, Trash2 } from "lucide-react";
+import { StudentFormModal } from "./StudentFormModal";
+import { toast } from "sonner";
 
 interface StudentRowProps {
   student: Student;
 }
 
 export default function StudentRow({ student }: StudentRowProps) {
-  const { getDisplayCounter, incrementCounter, decrementCounter, pendingChanges } =
+  const { getDisplayCounter, incrementCounter, decrementCounter, pendingChanges, updateStudent, deleteStudent } =
     useApp();
   const [bumping, setBumping] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!window.confirm(`Are you sure you want to delete student ${student.studentName}?`)) return;
+    setDeleting(true);
+    const res = await deleteStudent(student.rowIndex);
+    if (res.success) {
+      toast.success("Student deleted");
+    } else {
+      toast.error(res.error || "Failed to delete student");
+    }
+    setDeleting(false);
+  }
+
+  async function handleEditSubmit(updatedStudent: Partial<Student> | Student) {
+    const res = await updateStudent(updatedStudent as Student);
+    if (res.success) {
+      toast.success("Student updated");
+    }
+    return res;
+  }
 
   const displayCounter = getDisplayCounter(
     student.studentId,
@@ -81,6 +105,32 @@ export default function StudentRow({ student }: StudentRowProps) {
       >
         <Plus size={22} />
       </button>
+
+      {/* Edit / Delete Actions */}
+      <div className="flex flex-col gap-1 ml-2 shrink-0">
+        <button
+          onClick={() => setEditModalOpen(true)}
+          className="p-1 text-text-muted hover:text-white transition-colors rounded hover:bg-white/5"
+          title="Edit Student"
+        >
+          <Edit2 size={12} />
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="p-1 text-text-muted hover:text-red-400 transition-colors rounded hover:bg-red-400/10"
+          title="Delete Student"
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
+
+      <StudentFormModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        initialData={student}
+      />
     </div>
   );
 }

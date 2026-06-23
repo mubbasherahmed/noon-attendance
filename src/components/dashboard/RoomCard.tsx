@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { Room } from "@/lib/types";
 import { useApp } from "@/context/AppContext";
-import { DoorOpen, FileSpreadsheet, ArrowRightLeft } from "lucide-react";
+import { DoorOpen, FileSpreadsheet, ArrowRightLeft, Edit2, Trash2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import { RoomFormModal } from "./RoomFormModal";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -13,10 +14,32 @@ interface RoomCardProps {
 }
 
 export default function RoomCard({ room }: RoomCardProps) {
-  const { sheetNames, refreshRooms } = useApp();
+  const { sheetNames, refreshRooms, updateRoom, deleteRoom } = useApp();
   const [swapModalOpen, setSwapModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [newSheet, setNewSheet] = useState(room.currentSheetName);
   const [swapping, setSwapping] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!window.confirm(`Are you sure you want to delete ${room.roomName}?`)) return;
+    setDeleting(true);
+    const res = await deleteRoom(room.rowIndex);
+    if (res.success) {
+      toast.success("Room deleted");
+    } else {
+      toast.error(res.error || "Failed to delete room");
+    }
+    setDeleting(false);
+  }
+
+  async function handleEditSubmit(updatedRoom: Partial<Room> | Room) {
+    const res = await updateRoom(updatedRoom as Room);
+    if (res.success) {
+      toast.success("Room updated");
+    }
+    return res;
+  }
 
   async function handleSwap() {
     if (newSheet === room.currentSheetName) {
@@ -65,6 +88,23 @@ export default function RoomCard({ room }: RoomCardProps) {
               </h3>
               <p className="text-xs text-text-muted mt-0.5">ID: {room.roomId}</p>
             </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setEditModalOpen(true)}
+              className="p-1.5 text-text-muted hover:text-white transition-colors rounded-md hover:bg-white/5"
+              title="Edit Room"
+            >
+              <Edit2 size={14} />
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 text-text-muted hover:text-red-400 transition-colors rounded-md hover:bg-red-400/10"
+              title="Delete Room"
+            >
+              <Trash2 size={14} />
+            </button>
           </div>
         </div>
 
@@ -155,6 +195,14 @@ export default function RoomCard({ room }: RoomCardProps) {
           </div>
         </div>
       </Modal>
+
+      {/* Edit Modal */}
+      <RoomFormModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        initialData={room}
+      />
     </>
   );
 }

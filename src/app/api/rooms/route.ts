@@ -1,8 +1,10 @@
 // GET /api/rooms?campus=X — Fetch rooms filtered by campus
 // PATCH /api/rooms — Swap the Current_Sheet_Name for a room
 import { NextRequest, NextResponse } from "next/server";
-import { getRooms, updateCell, getSheetNames } from "@/lib/google-sheets";
+import { getRooms, updateCell, getSheetNames, appendRow, batchUpdateValues, deleteRow } from "@/lib/google-sheets";
 import { RoomSwapRequest } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,5 +61,60 @@ export async function PATCH(request: NextRequest) {
       { error: "Failed to swap room sheet", details: String(error) },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { roomId, roomName, currentSheetName, campusName } = body;
+
+    if (!roomId || !roomName || !campusName) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    await appendRow("Rooms!A:D", [roomId, roomName, currentSheetName || "", campusName]);
+
+    return NextResponse.json({ success: true, message: "Room created" });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to create room", details: String(error) }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { roomId, roomName, currentSheetName, campusName, rowIndex } = body;
+
+    if (!rowIndex) {
+      return NextResponse.json({ error: "rowIndex is required" }, { status: 400 });
+    }
+
+    await batchUpdateValues([
+      {
+        range: `Rooms!A${rowIndex}:D${rowIndex}`,
+        values: [[roomId, roomName, currentSheetName || "", campusName]],
+      },
+    ]);
+
+    return NextResponse.json({ success: true, message: "Room updated" });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to update room", details: String(error) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const rowIndex = request.nextUrl.searchParams.get("rowIndex");
+
+    if (!rowIndex) {
+      return NextResponse.json({ error: "rowIndex is required" }, { status: 400 });
+    }
+
+    await deleteRow("Rooms", parseInt(rowIndex, 10));
+
+    return NextResponse.json({ success: true, message: "Room deleted" });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to delete room", details: String(error) }, { status: 500 });
   }
 }

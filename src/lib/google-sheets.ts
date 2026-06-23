@@ -91,6 +91,22 @@ export async function batchUpdateValues(
   return response.data.totalUpdatedCells || 0;
 }
 
+export async function appendRow(
+  range: string,
+  values: (string | number)[]
+): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: getSpreadsheetId(),
+    range,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: {
+      values: [values],
+    },
+  });
+}
+
 export async function deleteRow(
   sheetTabName: string,
   rowIndex: number
