@@ -8,7 +8,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { Room, Student, AttendanceUpdate } from "@/lib/types";
+import { Room, Student, AttendanceUpdate, Campus } from "@/lib/types";
 
 // =============================================
 // App Context — Campus, Rooms, Students, and
@@ -22,7 +22,7 @@ interface PendingChange {
 
 interface AppContextType {
   // Campus
-  campuses: string[];
+  campuses: Campus[];
   selectedCampus: string;
   setSelectedCampus: (campus: string) => void;
   loadingCampuses: boolean;
@@ -63,7 +63,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   // ── Campus State ──
-  const [campuses, setCampuses] = useState<string[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [selectedCampus, setSelectedCampus] = useState<string>("");
   const [loadingCampuses, setLoadingCampuses] = useState(true);
 
@@ -92,7 +92,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         if (data.campuses && data.campuses.length > 0) {
           setCampuses(data.campuses);
-          setSelectedCampus(data.campuses[0]);
+          setSelectedCampus(data.campuses[0].campusName);
         }
       } catch (error) {
         console.error("Failed to fetch campuses:", error);

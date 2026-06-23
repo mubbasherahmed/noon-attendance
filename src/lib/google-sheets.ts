@@ -5,7 +5,7 @@
 // =============================================
 
 import { google, sheets_v4 } from "googleapis";
-import { Room, Student } from "./types";
+import { Room, Student, Campus } from "./types";
 
 // ── Auth & Client ────────────────────────────
 
@@ -210,17 +210,23 @@ export async function getStudents(
 }
 
 /**
- * Get unique campus names from the Rooms tab.
+ * Fetch all campuses from the "Campuses" tab.
+ * Columns: Campus_Name | Principal_Name | Number_of_Students
  */
-export async function getCampuses(): Promise<string[]> {
-  const rows = await getSheetData("Rooms!D2:D");
-  const campuses = new Set<string>();
-  rows.forEach((row) => {
-    if (row[0]?.trim()) {
-      campuses.add(row[0].trim());
-    }
-  });
-  return Array.from(campuses).sort();
+export async function getCampuses(): Promise<Campus[]> {
+  try {
+    const rows = await getSheetData("Campuses!A2:C");
+    const campuses: Campus[] = rows.map((row, idx) => ({
+      campusName: row[0] || "",
+      principalName: row[1] || "",
+      numberOfStudents: parseInt(row[2] || "0", 10),
+      rowIndex: idx + 2,
+    }));
+    return campuses.filter(c => c.campusName.trim() !== "");
+  } catch (error) {
+    console.error("Error fetching campuses, does the 'Campuses' tab exist?", error);
+    return [];
+  }
 }
 
 /**

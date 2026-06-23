@@ -39,8 +39,8 @@ export default function CampusSelector() {
         className="select-glass pl-10 pr-10 py-2.5 min-w-[200px]"
       >
         {campuses.map((campus) => (
-          <option key={campus} value={campus}>
-            {campus}
+          <option key={campus.campusName} value={campus.campusName}>
+            {campus.campusName}
           </option>
         ))}
       </select>

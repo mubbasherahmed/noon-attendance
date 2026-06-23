@@ -2,6 +2,14 @@
 // Attendance Management App — Type Definitions
 // =============================================
 
+export interface Campus {
+  campusName: string;
+  principalName: string;
+  numberOfStudents: number;
+  /** 1-indexed row number in the Google Sheet */
+  rowIndex: number;
+}
+
 export interface Room {
   roomId: string;
   roomName: string;
