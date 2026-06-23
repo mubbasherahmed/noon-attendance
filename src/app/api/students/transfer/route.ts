@@ -54,28 +54,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (targetStudent) {
-      // ── MERGE PATH ──
-      // Sum the attendance counters on the target row
-      const mergedCounter =
-        targetStudent.attendanceCounter + sourceStudent.attendanceCounter;
-
-      // Update the target row's attendance counter
-      await batchUpdateValues([
+      return NextResponse.json(
         {
-          range: `Attendance_Data!E${targetStudent.rowIndex}`,
-          values: [[mergedCounter]],
+          error: `Student "${studentId}" already exists on target sheet "${targetSheet}". Merging daily attendance is not supported.`,
         },
-      ]);
-
-      // Delete the source row
-      await deleteRow("Attendance_Data", sourceStudent.rowIndex);
-
-      const response: TransferResponse = {
-        success: true,
-        merged: true,
-        message: `Merged student "${sourceStudent.studentName}" into sheet "${targetSheet}" with combined attendance count of ${mergedCounter}`,
-      };
-      return NextResponse.json(response);
+        { status: 400 }
+      );
     } else {
       // ── CLEAN SWAP PATH ──
       // Simply update the Sheet_Name cell (column A) from sourceSheet to targetSheet
@@ -87,7 +71,7 @@ export async function POST(request: NextRequest) {
       const response: TransferResponse = {
         success: true,
         merged: false,
-        message: `Transferred student "${sourceStudent.studentName}" from "${sourceSheet}" to "${targetSheet}" with attendance count ${sourceStudent.attendanceCounter} intact`,
+        message: `Transferred student "${sourceStudent.studentName}" from "${sourceSheet}" to "${targetSheet}".`,
       };
       return NextResponse.json(response);
     }

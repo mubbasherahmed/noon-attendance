@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
   try {
     const campus = request.nextUrl.searchParams.get("campus") || undefined;
     const sheet = request.nextUrl.searchParams.get("sheet") || undefined;
-    const students = await getStudents(campus, sheet);
+    const date = request.nextUrl.searchParams.get("date") || undefined;
+    const students = await getStudents(campus, sheet, date);
     return NextResponse.json({ students });
   } catch (error) {
     console.error("Failed to fetch students:", error);
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Columns: Sheet_Name | Student ID | Student Name | Roll Number | Attendance_Counter | Campus_Name
-    await appendRow("Attendance_Data!A:F", [sheetName, studentId, studentName, rollNumber, 0, campusName]);
+    await appendRow("Attendance_Data!A:F", [sheetName, studentId, studentName, rollNumber, "", campusName]);
 
     return NextResponse.json({ success: true, message: "Student created" });
   } catch (error) {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { sheetName, studentId, studentName, rollNumber, attendanceCounter, campusName, rowIndex } = body;
+    const { sheetName, studentId, studentName, rollNumber, campusName, rowIndex } = body;
 
     if (!rowIndex) {
       return NextResponse.json({ error: "rowIndex is required" }, { status: 400 });
@@ -48,9 +49,13 @@ export async function PUT(request: NextRequest) {
 
     await batchUpdateValues([
       {
-        range: `Attendance_Data!A${rowIndex}:F${rowIndex}`,
-        values: [[sheetName, studentId, studentName, rollNumber, attendanceCounter || 0, campusName]],
+        range: `Attendance_Data!A${rowIndex}:D${rowIndex}`,
+        values: [[sheetName, studentId, studentName, rollNumber]],
       },
+      {
+        range: `Attendance_Data!F${rowIndex}`,
+        values: [[campusName]],
+      }
     ]);
 
     return NextResponse.json({ success: true, message: "Student updated" });

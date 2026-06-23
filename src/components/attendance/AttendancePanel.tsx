@@ -45,7 +45,7 @@ export default function AttendancePanel({ sheetName }: AttendancePanelProps) {
     const result = await saveSession();
     if (result.success) {
       toast.success("Attendance saved to Google Sheets!", {
-        description: `${pendingCount} increment(s) synced successfully.`,
+        description: `${pendingCount} student(s) updated successfully.`,
       });
     } else {
       toast.error("Failed to save attendance", {
@@ -66,7 +66,7 @@ export default function AttendancePanel({ sheetName }: AttendancePanelProps) {
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
               {students.length} student{students.length !== 1 ? "s" : ""} •{" "}
-              Sheet: {sheetName}
+              Date: {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
           </div>
         </div>

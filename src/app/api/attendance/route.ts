@@ -2,25 +2,52 @@
 // Receives { updates: [{ studentId, incrementBy }] }
 // Performs a single batchUpdate to Google Sheets
 import { NextRequest, NextResponse } from "next/server";
-import { getStudents, batchUpdateValues } from "@/lib/google-sheets";
+import { getStudents, batchUpdateValues, getSheetData } from "@/lib/google-sheets";
 import { BatchSaveRequest, BatchSaveResponse } from "@/lib/types";
+
+function colIndexToLetter(index: number): string {
+  let letter = "";
+  let temp = index;
+  while (temp >= 0) {
+    letter = String.fromCharCode((temp % 26) + 65) + letter;
+    temp = Math.floor(temp / 26) - 1;
+  }
+  return letter;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body: BatchSaveRequest = await request.json();
-    const { updates } = body;
+    const { updates, date } = body;
 
-    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+    if (!updates || !Array.isArray(updates) || updates.length === 0 || !date) {
       return NextResponse.json(
-        { error: "updates array is required and must not be empty" },
+        { error: "updates array and date are required" },
         { status: 400 }
       );
     }
 
-    // Fetch all students to find their current counters and row indices
     const allStudents = await getStudents();
     const errors: string[] = [];
     const batchData: { range: string; values: (string | number)[][] }[] = [];
+
+    // Find the date column
+    const headerRows = await getSheetData("Attendance_Data!A1:ZZ1");
+    const headers = headerRows[0] || [];
+    let dateColIndex = headers.findIndex((h) => h?.trim() === date.trim());
+
+    if (dateColIndex === -1) {
+      // Create new column for this date
+      dateColIndex = headers.length;
+      if (dateColIndex < 6) dateColIndex = 6; // Start from column G if somehow empty
+      const letter = colIndexToLetter(dateColIndex);
+      batchData.push({
+        range: `Attendance_Data!${letter}1`,
+        values: [[date]],
+      });
+    }
+
+    const colLetter = colIndexToLetter(dateColIndex);
 
     for (const update of updates) {
       const student = allStudents.find((s) => s.studentId === update.studentId);
@@ -29,12 +56,11 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const newCounter = student.attendanceCounter + update.incrementBy;
+      if (!update.status) continue; // Unselected
 
-      // Column E = Attendance_Counter in the Attendance_Data tab
       batchData.push({
-        range: `Attendance_Data!E${student.rowIndex}`,
-        values: [[newCounter]],
+        range: `Attendance_Data!${colLetter}${student.rowIndex}`,
+        values: [[update.status]],
       });
     }
 

@@ -24,7 +24,7 @@ export interface Student {
   studentName: string;
   rollNumber: string;
   sheetName: string;
-  attendanceCounter: number;
+  todayStatus: "Present" | "Absent" | null;
   campusName: string;
   /** 1-indexed row number in the Google Sheet (for updates) */
   rowIndex: number;
@@ -32,10 +32,11 @@ export interface Student {
 
 export interface AttendanceUpdate {
   studentId: string;
-  incrementBy: number;
+  status: "Present" | "Absent" | null;
 }
 
 export interface BatchSaveRequest {
+  date: string;
   updates: AttendanceUpdate[];
 }
 

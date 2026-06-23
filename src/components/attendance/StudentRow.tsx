@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { Student } from "@/lib/types";
 import { useApp } from "@/context/AppContext";
-import { Plus, Minus, User, Edit2, Trash2 } from "lucide-react";
+import { User, Edit2, Trash2 } from "lucide-react";
 import { StudentFormModal } from "./StudentFormModal";
 import { toast } from "sonner";
 
@@ -12,9 +12,7 @@ interface StudentRowProps {
 }
 
 export default function StudentRow({ student }: StudentRowProps) {
-  const { getDisplayCounter, incrementCounter, decrementCounter, pendingChanges, updateStudent, deleteStudent } =
-    useApp();
-  const [bumping, setBumping] = useState(false);
+  const { getStudentStatus, setStudentStatus, updateStudent, deleteStudent } = useApp();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -38,22 +36,7 @@ export default function StudentRow({ student }: StudentRowProps) {
     return res;
   }
 
-  const displayCounter = getDisplayCounter(
-    student.studentId,
-    student.attendanceCounter
-  );
-  const pending = pendingChanges.get(student.studentId);
-  const hasPending = pending && pending.incrementBy > 0;
-
-  const handleIncrement = useCallback(() => {
-    incrementCounter(student.studentId);
-    setBumping(true);
-    setTimeout(() => setBumping(false), 200);
-  }, [incrementCounter, student.studentId]);
-
-  const handleDecrement = useCallback(() => {
-    decrementCounter(student.studentId);
-  }, [decrementCounter, student.studentId]);
+  const currentStatus = getStudentStatus(student.studentId);
 
   return (
     <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 border-b border-border last:border-b-0 hover:bg-surface-hover/30 transition-colors">
@@ -71,40 +54,72 @@ export default function StudentRow({ student }: StudentRowProps) {
         </p>
       </div>
 
-      {/* Counter Display */}
-      <div className="flex flex-col items-center shrink-0 min-w-[52px]">
-        <span
-          className={`text-xl font-bold tabular-nums ${
-            hasPending ? "text-emerald" : "text-text-primary"
-          } ${bumping ? "animate-counter-bump" : ""}`}
-        >
-          {displayCounter}
-        </span>
-        {hasPending && (
-          <span className="text-[10px] font-medium text-emerald/70">
-            +{pending.incrementBy}
+      {/* Attendance Radio Buttons */}
+      <div className="flex items-center gap-4 shrink-0 ml-auto mr-2 sm:mr-4">
+        <label className="flex items-center gap-1.5 cursor-pointer group select-none">
+          <div
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+              currentStatus === "Present"
+                ? "border-emerald bg-emerald/10"
+                : "border-text-muted group-hover:border-emerald/50"
+            }`}
+          >
+            {currentStatus === "Present" && (
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald" />
+            )}
+          </div>
+          <span
+            className={`text-sm font-medium ${
+              currentStatus === "Present" ? "text-emerald" : "text-text-secondary group-hover:text-text-primary"
+            }`}
+          >
+            Present
           </span>
-        )}
+          <input
+            type="radio"
+            className="hidden"
+            checked={currentStatus === "Present"}
+            onChange={() =>
+              setStudentStatus(
+                student.studentId,
+                currentStatus === "Present" ? null : "Present"
+              )
+            }
+          />
+        </label>
+
+        <label className="flex items-center gap-1.5 cursor-pointer group select-none">
+          <div
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+              currentStatus === "Absent"
+                ? "border-rose bg-rose/10"
+                : "border-text-muted group-hover:border-rose/50"
+            }`}
+          >
+            {currentStatus === "Absent" && (
+              <div className="w-2.5 h-2.5 rounded-full bg-rose" />
+            )}
+          </div>
+          <span
+            className={`text-sm font-medium ${
+              currentStatus === "Absent" ? "text-rose" : "text-text-secondary group-hover:text-text-primary"
+            }`}
+          >
+            Absent
+          </span>
+          <input
+            type="radio"
+            className="hidden"
+            checked={currentStatus === "Absent"}
+            onChange={() =>
+              setStudentStatus(
+                student.studentId,
+                currentStatus === "Absent" ? null : "Absent"
+              )
+            }
+          />
+        </label>
       </div>
-
-      {/* Decrement Button */}
-      <button
-        onClick={handleDecrement}
-        disabled={!hasPending}
-        className="w-9 h-9 rounded-lg flex items-center justify-center border border-border bg-surface text-text-muted transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:border-rose hover:text-rose hover:bg-rose/10 active:scale-95 shrink-0"
-        aria-label={`Decrement attendance for ${student.studentName}`}
-      >
-        <Minus size={16} />
-      </button>
-
-      {/* Increment Button */}
-      <button
-        onClick={handleIncrement}
-        className="btn-increment shrink-0"
-        aria-label={`Increment attendance for ${student.studentName}`}
-      >
-        <Plus size={22} />
-      </button>
 
       {/* Edit / Delete Actions */}
       <div className="flex flex-col gap-1 ml-2 shrink-0">

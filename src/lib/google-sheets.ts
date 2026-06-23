@@ -182,18 +182,38 @@ export async function getRooms(campusFilter?: string): Promise<Room[]> {
  */
 export async function getStudents(
   campusFilter?: string,
-  sheetFilter?: string
+  sheetFilter?: string,
+  dateFilter?: string
 ): Promise<Student[]> {
-  const rows = await getSheetData("Attendance_Data!A2:F");
-  let students: Student[] = rows.map((row, idx) => ({
-    sheetName: row[0] || "",
-    studentId: row[1] || "",
-    studentName: row[2] || "",
-    rollNumber: row[3] || "",
-    attendanceCounter: parseInt(row[4] || "0", 10),
-    campusName: row[5] || "",
-    rowIndex: idx + 2,
-  }));
+  const rows = await getSheetData("Attendance_Data!A1:ZZ");
+  if (!rows || rows.length < 2) return [];
+
+  const headers = rows[0] || [];
+  let dateColIndex = -1;
+  if (dateFilter) {
+    dateColIndex = headers.findIndex((h) => h?.trim() === dateFilter.trim());
+  }
+
+  const dataRows = rows.slice(1);
+
+  let students: Student[] = dataRows.map((row, idx) => {
+    let todayStatus: "Present" | "Absent" | null = null;
+    if (dateColIndex !== -1 && row[dateColIndex]) {
+      const val = row[dateColIndex].toString().trim().toLowerCase();
+      if (val === "present") todayStatus = "Present";
+      if (val === "absent") todayStatus = "Absent";
+    }
+
+    return {
+      sheetName: row[0] || "",
+      studentId: row[1] || "",
+      studentName: row[2] || "",
+      rollNumber: row[3] || "",
+      todayStatus,
+      campusName: row[5] || "",
+      rowIndex: idx + 2,
+    };
+  });
 
   if (campusFilter) {
     students = students.filter(

@@ -28,8 +28,7 @@ export default function TransferModal({
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferring, setTransferring] = useState(false);
-  const [willMerge, setWillMerge] = useState(false);
-  const [targetStudentCounter, setTargetStudentCounter] = useState(0);
+  const [transferring, setTransferring] = useState(false);
 
   // Fetch students when source sheet changes
   const fetchStudents = useCallback(async () => {
@@ -66,24 +65,8 @@ export default function TransferModal({
     }
   }, [isOpen]);
 
-  // Check if target sheet has this student (for merge warning)
-  async function checkMerge() {
+  async function checkTransfer() {
     if (!selectedStudentId || !targetSheet || !selectedCampus) return;
-
-    try {
-      const res = await fetch(
-        `/api/students?campus=${encodeURIComponent(selectedCampus)}&sheet=${encodeURIComponent(targetSheet)}`
-      );
-      const data = await res.json();
-      const targetStudents: Student[] = data.students || [];
-      const existing = targetStudents.find(
-        (s) => s.studentId === selectedStudentId
-      );
-      setWillMerge(!!existing);
-      setTargetStudentCounter(existing?.attendanceCounter || 0);
-    } catch {
-      setWillMerge(false);
-    }
     setConfirmOpen(true);
   }
 
@@ -185,8 +168,7 @@ export default function TransferModal({
                 </option>
                 {students.map((s) => (
                   <option key={s.studentId} value={s.studentId}>
-                    {s.studentName} (Roll: {s.rollNumber}) — Count:{" "}
-                    {s.attendanceCounter}
+                    {s.studentName} (Roll: {s.rollNumber})
                   </option>
                 ))}
               </select>
@@ -237,7 +219,7 @@ export default function TransferModal({
               Cancel
             </button>
             <button
-              onClick={checkMerge}
+              onClick={checkTransfer}
               disabled={!canProceed}
               className="btn-primary flex-1"
             >
@@ -255,49 +237,6 @@ export default function TransferModal({
         title="Confirm Transfer"
       >
         <div className="flex flex-col gap-4">
-          {willMerge ? (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber/10 border border-amber/20">
-                <Merge size={16} className="text-amber" />
-                <span className="text-sm text-amber font-medium">
-                  Merge Required
-                </span>
-              </div>
-              <p className="text-sm text-text-secondary">
-                <strong className="text-text-primary">
-                  {selectedStudent?.studentName}
-                </strong>{" "}
-                already exists on &quot;{targetSheet}&quot;. Their attendance
-                counters will be merged:
-              </p>
-              <div className="flex items-center gap-3 justify-center py-3 px-4 rounded-lg bg-surface border border-border">
-                <div className="text-center">
-                  <p className="text-xs text-text-muted">Source</p>
-                  <p className="text-lg font-bold text-text-primary">
-                    {selectedStudent?.attendanceCounter || 0}
-                  </p>
-                </div>
-                <span className="text-xl text-text-muted">+</span>
-                <div className="text-center">
-                  <p className="text-xs text-text-muted">Target</p>
-                  <p className="text-lg font-bold text-text-primary">
-                    {targetStudentCounter}
-                  </p>
-                </div>
-                <span className="text-xl text-text-muted">=</span>
-                <div className="text-center">
-                  <p className="text-xs text-text-muted">Merged</p>
-                  <p className="text-lg font-bold text-emerald">
-                    {(selectedStudent?.attendanceCounter || 0) +
-                      targetStudentCounter}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-text-muted">
-                The source row on &quot;{sourceSheet}&quot; will be deleted.
-              </p>
-            </div>
-          ) : (
             <div>
               <p className="text-sm text-text-secondary">
                 Transfer{" "}
@@ -306,13 +245,7 @@ export default function TransferModal({
                 </strong>{" "}
                 from &quot;{sourceSheet}&quot; to &quot;{targetSheet}&quot;?
               </p>
-              <p className="text-xs text-text-muted mt-2">
-                Their attendance count of{" "}
-                <strong>{selectedStudent?.attendanceCounter}</strong> will be
-                preserved.
-              </p>
             </div>
-          )}
 
           <div className="flex gap-3 mt-2">
             <button
@@ -325,15 +258,13 @@ export default function TransferModal({
             <button
               onClick={handleTransfer}
               disabled={transferring}
-              className={`flex-1 ${willMerge ? "btn-danger" : "btn-primary"}`}
+              className={`flex-1 btn-primary`}
             >
               {transferring ? (
                 <>
                   <LoadingSpinner size={16} />
                   Transferring...
                 </>
-              ) : willMerge ? (
-                "Confirm Merge & Transfer"
               ) : (
                 "Confirm Transfer"
               )}

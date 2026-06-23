@@ -17,7 +17,7 @@ import { Room, Student, AttendanceUpdate, Campus } from "@/lib/types";
 
 interface PendingChange {
   studentId: string;
-  incrementBy: number;
+  status: "Present" | "Absent" | null;
 }
 
 interface AppContextType {
@@ -40,9 +40,8 @@ interface AppContextType {
 
   // Attendance (optimistic)
   pendingChanges: Map<string, PendingChange>;
-  getDisplayCounter: (studentId: string, baseCounter: number) => number;
-  incrementCounter: (studentId: string) => void;
-  decrementCounter: (studentId: string) => void;
+  getStudentStatus: (studentId: string) => "Present" | "Absent" | null;
+  setStudentStatus: (studentId: string, status: "Present" | "Absent" | null) => void;
   hasPendingChanges: boolean;
   pendingCount: number;
   saveSession: () => Promise<{ success: boolean; error?: string }>;
@@ -134,7 +133,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCurrentSheetFilter(sheetFilter);
       try {
         setLoadingStudents(true);
-        let url = `/api/students?campus=${encodeURIComponent(selectedCampus)}`;
+        const today = new Date().toISOString().split('T')[0];
+        let url = `/api/students?campus=${encodeURIComponent(selectedCampus)}&date=${today}`;
         if (sheetFilter) {
           url += `&sheet=${encodeURIComponent(sheetFilter)}`;
         }
@@ -150,50 +150,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [selectedCampus]
   );
 
-  // ── Optimistic Counter Helpers ──
-  const getDisplayCounter = useCallback(
-    (studentId: string, baseCounter: number): number => {
+  // ── Optimistic Status Helpers ──
+  const getStudentStatus = useCallback(
+    (studentId: string): "Present" | "Absent" | null => {
       const pending = pendingChanges.get(studentId);
-      return baseCounter + (pending?.incrementBy || 0);
+      if (pending) return pending.status;
+      const student = students.find((s) => s.studentId === studentId);
+      return student?.todayStatus || null;
     },
-    [pendingChanges]
+    [pendingChanges, students]
   );
 
-  const incrementCounter = useCallback((studentId: string) => {
-    setPendingChanges((prev) => {
-      const next = new Map(prev);
-      const existing = next.get(studentId);
-      next.set(studentId, {
-        studentId,
-        incrementBy: (existing?.incrementBy || 0) + 1,
+  const setStudentStatus = useCallback(
+    (studentId: string, status: "Present" | "Absent" | null) => {
+      setPendingChanges((prev) => {
+        const next = new Map(prev);
+        const student = students.find((s) => s.studentId === studentId);
+        
+        if (student?.todayStatus === status) {
+          next.delete(studentId);
+        } else {
+          next.set(studentId, { studentId, status });
+        }
+        return next;
       });
-      return next;
-    });
-  }, []);
-
-  const decrementCounter = useCallback((studentId: string) => {
-    setPendingChanges((prev) => {
-      const next = new Map(prev);
-      const existing = next.get(studentId);
-      const newVal = (existing?.incrementBy || 0) - 1;
-      if (newVal <= 0) {
-        next.delete(studentId);
-      } else {
-        next.set(studentId, { studentId, incrementBy: newVal });
-      }
-      return next;
-    });
-  }, []);
+    },
+    [students]
+  );
 
   const resetPending = useCallback(() => {
     setPendingChanges(new Map());
   }, []);
 
   const hasPendingChanges = pendingChanges.size > 0;
-  const pendingCount = Array.from(pendingChanges.values()).reduce(
-    (sum, c) => sum + c.incrementBy,
-    0
-  );
+  const pendingCount = pendingChanges.size;
 
   // ── Save Session (Batch Write) ──
   const saveSession = useCallback(async (): Promise<{
@@ -208,10 +198,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       setSavingSession(true);
+      const today = new Date().toISOString().split('T')[0];
       const res = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ updates }),
+        body: JSON.stringify({ updates, date: today }),
       });
 
       const data = await res.json();
@@ -336,9 +327,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loadingStudents,
         refreshStudents,
         pendingChanges,
-        getDisplayCounter,
-        incrementCounter,
-        decrementCounter,
+        getStudentStatus,
+        setStudentStatus,
         hasPendingChanges,
         pendingCount,
         saveSession,
