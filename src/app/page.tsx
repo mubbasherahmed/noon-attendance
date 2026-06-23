@@ -1,0 +1,163 @@
+"use client";
+
+import React, { useState } from "react";
+import { useApp } from "@/context/AppContext";
+import CampusSelector from "@/components/dashboard/CampusSelector";
+import RoomGrid from "@/components/dashboard/RoomGrid";
+import TransferModal from "@/components/transfer/TransferModal";
+import {
+  DoorOpen,
+  Users,
+  BarChart3,
+  ArrowRightLeft,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import Link from "next/link";
+
+export default function HomePage() {
+  const {
+    rooms,
+    selectedCampus,
+    loadingRooms,
+    refreshRooms,
+    sheetNames,
+  } = useApp();
+
+  const [transferOpen, setTransferOpen] = useState(false);
+
+  // Stats
+  const totalRooms = rooms.length;
+  const totalSheets = sheetNames.length;
+  const assignedRooms = rooms.filter((r) => r.currentSheetName).length;
+
+  return (
+    <div className="min-h-screen">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-50 border-b border-border bg-midnight/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
+                <Sparkles size={18} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-text-primary tracking-tight">
+                  Noon Attendance
+                </h1>
+                <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">
+                  Management System
+                </p>
+              </div>
+            </div>
+
+            {/* Campus Selector + Actions */}
+            <div className="flex items-center gap-3">
+              <CampusSelector />
+              <button
+                onClick={() => setTransferOpen(true)}
+                className="btn-secondary hidden sm:flex"
+              >
+                <ArrowRightLeft size={16} />
+                Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Content ── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
+          <div className="stat-card">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+                <DoorOpen size={16} className="text-accent" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-text-primary">{totalRooms}</p>
+            <p className="text-xs text-text-muted mt-0.5">Total Rooms</p>
+          </div>
+
+          <div className="stat-card">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald/15 flex items-center justify-center">
+                <BarChart3 size={16} className="text-emerald" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-text-primary">
+              {assignedRooms}
+              <span className="text-sm font-normal text-text-muted">
+                /{totalRooms}
+              </span>
+            </p>
+            <p className="text-xs text-text-muted mt-0.5">Assigned Rooms</p>
+          </div>
+
+          <div className="stat-card col-span-2 sm:col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-cyan/15 flex items-center justify-center">
+                <Users size={16} className="text-cyan" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-text-primary">{totalSheets}</p>
+            <p className="text-xs text-text-muted mt-0.5">Active Sheets</p>
+          </div>
+        </div>
+
+        {/* Section Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">
+              Rooms
+            </h2>
+            <p className="text-sm text-text-muted mt-0.5">
+              {selectedCampus
+                ? `Showing rooms for ${selectedCampus}`
+                : "Select a campus to view rooms"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Mobile Transfer Button */}
+            <button
+              onClick={() => setTransferOpen(true)}
+              className="btn-secondary sm:hidden"
+            >
+              <ArrowRightLeft size={16} />
+            </button>
+            <button
+              onClick={refreshRooms}
+              disabled={loadingRooms}
+              className="btn-icon"
+              title="Refresh rooms"
+            >
+              <RefreshCw
+                size={16}
+                className={loadingRooms ? "animate-spin" : ""}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Room Grid */}
+        <RoomGrid />
+
+        {/* Footer */}
+        <footer className="mt-16 pb-8 text-center">
+          <p className="text-xs text-text-muted">
+            Noon Attendance Management • Powered by Google Sheets
+          </p>
+        </footer>
+      </main>
+
+      {/* Transfer Modal */}
+      <TransferModal
+        isOpen={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        onComplete={refreshRooms}
+      />
+    </div>
+  );
+}
