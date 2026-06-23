@@ -5,23 +5,14 @@ import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import RoomCard from "./RoomCard";
 import { SkeletonCard } from "@/components/ui/LoadingSpinner";
-import { DoorOpen, Plus } from "lucide-react";
-import { RoomFormModal } from "./RoomFormModal";
-import { toast } from "sonner";
+import { DoorOpen } from "lucide-react";
 import { Room } from "@/lib/types";
 
 export default function RoomGrid() {
-  const { rooms, loadingRooms, selectedCampus, addRoom } = useApp();
+  const { rooms, loadingRooms, selectedCampus } = useApp();
   const { isAdmin } = useAuth();
-  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  async function handleAddSubmit(room: Partial<Room> | Room) {
-    const res = await addRoom(room);
-    if (res.success) {
-      toast.success("Room added successfully");
-    }
-    return res;
-  }
+
 
   if (loadingRooms) {
     return (
@@ -43,25 +34,10 @@ export default function RoomGrid() {
           </h3>
           <p className="text-sm text-text-muted max-w-md mb-6">
             {selectedCampus
-              ? `No rooms configured for "${selectedCampus}". ${isAdmin ? 'Add your first room below.' : 'Please contact an administrator.'}`
+              ? `No rooms configured for "${selectedCampus}". Add students to this campus to generate rooms.`
               : "No rooms configured yet."}
           </p>
-          {isAdmin && (
-            <button
-              onClick={() => setAddModalOpen(true)}
-              className="btn-primary"
-            >
-              <Plus size={16} />
-              <span>Add First Room</span>
-            </button>
-          )}
         </div>
-        <RoomFormModal
-          isOpen={addModalOpen}
-          onClose={() => setAddModalOpen(false)}
-          onSubmit={handleAddSubmit}
-          defaultCampus={selectedCampus || ""}
-        />
       </>
     );
   }
@@ -72,28 +48,7 @@ export default function RoomGrid() {
         {rooms.map((room) => (
           <RoomCard key={room.roomId} room={room} />
         ))}
-        {/* Add Room Card */}
-        {selectedCampus && isAdmin && (
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="glass-card flex flex-col items-center justify-center p-6 min-h-[160px] border-dashed hover:bg-white/5 transition-colors group cursor-pointer"
-          >
-            <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all">
-              <Plus size={24} className="text-indigo-400" />
-            </div>
-            <span className="text-sm font-medium text-text-secondary group-hover:text-text-primary transition-colors">
-              Add New Room
-            </span>
-          </button>
-        )}
       </div>
-
-      <RoomFormModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSubmit={handleAddSubmit}
-        defaultCampus={selectedCampus}
-      />
     </>
   );
 }

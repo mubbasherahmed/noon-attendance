@@ -20,6 +20,7 @@ const GROUPS = [
       { id: "shift", label: "Shift" },
       { id: "grade", label: "Grade" },
       { id: "roomNumber", label: "Room #" },
+      { id: "roomId", label: "Room ID" },
       { id: "facilitator", label: "Facilitator" },
     ],
   },

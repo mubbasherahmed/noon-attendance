@@ -26,6 +26,7 @@ export interface Student {
   shift: string;
   grade: string;
   room: string;
+  roomId?: string;
   onlineTeacher: string;
   facilitator: string;
   droppedOut: string;
@@ -42,10 +43,11 @@ export interface EnrollmentData {
   studentName: string;
   campusName: string;
   enrollmentDate: string;
-  shift: string;
-  grade: string;
-  roomNumber: string;
-  facilitator: string;
+  shift?: string;
+  grade?: string;
+  roomNumber?: string;
+  roomId?: string;
+  facilitator?: string;
   claimedAge: string;
   gender: string;
   isOrphan: string;

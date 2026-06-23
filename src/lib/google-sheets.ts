@@ -155,25 +155,31 @@ export async function deleteRow(
 // ── Domain-Specific Helpers ──────────────────
 
 /**
- * Fetch all rooms from the "Rooms" tab.
- * Columns: Room ID | Room Name | Current_Sheet_Name | Campus_Name
+ * Dynamically fetch all rooms by scanning the "Attendance" tab
+ * Columns: Room | Room ID
  */
 export async function getRooms(campusFilter?: string): Promise<Room[]> {
-  const rows = await getSheetData("Rooms!A2:D");
-  const rooms: Room[] = rows.map((row, idx) => ({
-    roomId: row[0] || "",
-    roomName: row[1] || "",
-    currentSheetName: row[2] || "",
-    campusName: row[3] || "",
-    rowIndex: idx + 2, // +2 because row 1 is header and rows are 1-indexed
-  }));
+  const students = await getStudents(campusFilter);
+  const roomsMap = new Map<string, Room>();
 
-  if (campusFilter) {
-    return rooms.filter(
-      (r) => r.campusName.toLowerCase() === campusFilter.toLowerCase()
-    );
-  }
-  return rooms;
+  let rowIndexCounter = 2;
+
+  students.forEach((student) => {
+    // Only process if both Room Name and Room ID are present
+    if (student.room && student.roomId) {
+      if (!roomsMap.has(student.roomId)) {
+        roomsMap.set(student.roomId, {
+          roomId: student.roomId,
+          roomName: student.room,
+          currentSheetName: "Attendance", // Default sheet mapping
+          campusName: student.campusName || "Noon-App",
+          rowIndex: rowIndexCounter++,
+        });
+      }
+    }
+  });
+
+  return Array.from(roomsMap.values());
 }
 
 export async function getStudents(
@@ -195,6 +201,7 @@ export async function getStudents(
   const shiftIdx = colIndex("Shift");
   const gradeIdx = colIndex("Grade");
   const roomIdx = colIndex("Room");
+  const roomIdIdx = colIndex("Room ID");
   const onlineTeacherIdx = colIndex("Online Teacher");
   const facilitatorIdx = colIndex("Facilitator");
   const droppedOutIdx = colIndex("Dropped out?");
@@ -224,6 +231,7 @@ export async function getStudents(
       shift: shiftIdx !== -1 ? (row[shiftIdx] || "").toString() : "",
       grade: gradeIdx !== -1 ? (row[gradeIdx] || "").toString() : "",
       room: roomIdx !== -1 ? (row[roomIdx] || "").toString() : "",
+      roomId: roomIdIdx !== -1 ? (row[roomIdIdx] || "").toString() : "",
       onlineTeacher: onlineTeacherIdx !== -1 ? (row[onlineTeacherIdx] || "").toString() : "",
       facilitator: facilitatorIdx !== -1 ? (row[facilitatorIdx] || "").toString() : "",
       droppedOut: droppedOutIdx !== -1 ? (row[droppedOutIdx] || "").toString() : "",
@@ -242,7 +250,7 @@ export async function getStudents(
   }
   if (roomFilter) {
     students = students.filter(
-      (s) => s.room.toLowerCase() === roomFilter.toLowerCase()
+      (s) => (s.roomId?.toLowerCase() === roomFilter.toLowerCase() || s.room?.toLowerCase() === roomFilter.toLowerCase())
     );
   }
 

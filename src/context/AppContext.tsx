@@ -49,10 +49,6 @@ interface AppContextType {
   resetPending: () => void;
 
   // CRUD
-  addRoom: (room: Partial<Room>) => Promise<{ success: boolean; error?: string }>;
-  updateRoom: (room: Room) => Promise<{ success: boolean; error?: string }>;
-  deleteRoom: (rowIndex: number) => Promise<{ success: boolean; error?: string }>;
-  
   addStudent: (student: Partial<Student>) => Promise<{ success: boolean; error?: string }>;
   updateStudent: (student: Student) => Promise<{ success: boolean; error?: string }>;
   deleteStudent: (rowIndex: number) => Promise<{ success: boolean; error?: string }>;
@@ -224,53 +220,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [pendingChanges, refreshStudents, currentSheetFilter]);
 
   // ── CRUD Operations ──
-  const addRoom = useCallback(async (room: Partial<Room>) => {
-    try {
-      const res = await fetch("/api/rooms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(room),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (!selectedCampus) {
-          window.location.reload();
-        } else {
-          await refreshRooms();
-        }
-      }
-      return { success: res.ok, error: data.error };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }, [refreshRooms, selectedCampus]);
-
-  const updateRoom = useCallback(async (room: Room) => {
-    try {
-      const res = await fetch("/api/rooms", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(room),
-      });
-      const data = await res.json();
-      if (res.ok) await refreshRooms();
-      return { success: res.ok, error: data.error };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }, [refreshRooms]);
-
-  const deleteRoom = useCallback(async (rowIndex: number) => {
-    try {
-      const res = await fetch(`/api/rooms?rowIndex=${rowIndex}`, { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok) await refreshRooms();
-      return { success: res.ok, error: data.error };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }, [refreshRooms]);
-
   const addStudent = useCallback(async (student: Partial<Student>) => {
     try {
       const res = await fetch("/api/students", {
@@ -334,9 +283,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSession,
         savingSession,
         resetPending,
-        addRoom,
-        updateRoom,
-        deleteRoom,
         addStudent,
         updateStudent,
         deleteStudent,
