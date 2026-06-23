@@ -34,19 +34,19 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-midnight/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b-[3px] border-accent bg-[#1e1e1e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
-                <Sparkles size={18} className="text-white" />
+              <div className="bg-white rounded-full px-3 py-1 flex items-center justify-center">
+                <span className="text-black font-bold text-xl tracking-tighter leading-none pb-0.5">noon</span>
               </div>
               <div>
-                <h1 className="text-base font-bold text-text-primary tracking-tight">
-                  Noon Attendance
+                <h1 className="text-base font-bold text-white tracking-tight">
+                  Attendance
                 </h1>
-                <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">
+                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
                   Management System
                 </p>
               </div>

@@ -2,25 +2,25 @@
 
 /* =============================================
    Noon Attendance — Design System
-   Premium dark theme with glassmorphism
+   Clean, flat, light theme
    ============================================= */
 
 @theme {
   /* ── Color Palette ── */
-  --color-midnight: #0a0e1a;
-  --color-deep-navy: #111827;
-  --color-surface: #1e2538;
-  --color-surface-hover: #252d42;
-  --color-surface-light: #2a3350;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-light: rgba(255, 255, 255, 0.12);
+  --color-midnight: #fdfbf7;
+  --color-deep-navy: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9f8f4;
+  --color-surface-light: #f3f1eb;
+  --color-border: #e2e1dc;
+  --color-border-light: #e8e7e2;
 
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
-  --color-accent-glow: rgba(99, 102, 241, 0.25);
+  --color-accent: #58d69d;
+  --color-accent-hover: #4ac78f;
+  --color-accent-glow: rgba(88, 214, 157, 0.25);
 
-  --color-emerald: #10b981;
-  --color-emerald-glow: rgba(16, 185, 129, 0.2);
+  --color-emerald: #58d69d;
+  --color-emerald-glow: rgba(88, 214, 157, 0.2);
 
   --color-amber: #f59e0b;
   --color-amber-glow: rgba(245, 158, 11, 0.2);
@@ -31,9 +31,9 @@
   --color-cyan: #22d3ee;
   --color-cyan-glow: rgba(34, 211, 238, 0.15);
 
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  --color-text-primary: #1e1e1e;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
 }
 
 /* ── Base Reset ── */
@@ -58,60 +58,54 @@ body {
 
 /* ── Background Gradient ── */
 .bg-gradient-main {
-  background: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 60%, rgba(16, 185, 129, 0.08), transparent),
-    radial-gradient(ellipse 40% 30% at 20% 80%, rgba(244, 63, 94, 0.06), transparent),
-    var(--color-midnight);
+  background: var(--color-midnight);
   min-height: 100vh;
 }
 
-/* ── Glassmorphism Cards ── */
+/* ── Glassmorphism Cards (now just flat cards) ── */
 .glass-card {
-  background: rgba(30, 37, 56, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  background: rgba(37, 45, 66, 0.7);
-  border-color: var(--color-border-light);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-color: var(--color-accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .glass-card-static {
-  background: rgba(30, 37, 56, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 /* ── Stat Cards ── */
 .stat-card {
-  background: rgba(30, 37, 56, 0.5);
-  backdrop-filter: blur(16px);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-border-light);
 }
 
 /* ── Buttons ── */
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
+  background: var(--color-accent);
+  color: #1e1e1e;
   font-weight: 600;
   padding: 0.625rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 99px; /* pill shape */
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -123,8 +117,8 @@ body {
 }
 
 .btn-primary:hover {
+  background: var(--color-accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px var(--color-accent-glow);
 }
 
 .btn-primary:active {
@@ -143,8 +137,8 @@ body {
   color: var(--color-text-primary);
   font-weight: 500;
   padding: 0.625rem 1.5rem;
-  border-radius: 12px;
-  border: 1px solid var(--color-border-light);
+  border-radius: 99px;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.875rem;
@@ -160,11 +154,11 @@ body {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  background: #f43f5e;
   color: white;
   font-weight: 600;
   padding: 0.625rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 99px;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -177,7 +171,7 @@ body {
 
 .btn-danger:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px var(--color-rose-glow);
+  background: #e11d48;
 }
 
 .btn-icon {
@@ -211,8 +205,8 @@ body {
   justify-content: center;
   cursor: pointer;
   border: none;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: var(--color-accent);
+  color: #1e1e1e;
   font-size: 1.5rem;
   font-weight: 700;
   transition: all 0.15s ease;
@@ -222,7 +216,7 @@ body {
 
 .btn-increment:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 20px var(--color-emerald-glow);
+  background: var(--color-accent-hover);
 }
 
 .btn-increment:active {
@@ -234,14 +228,14 @@ body {
   appearance: none;
   background: var(--color-surface);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 0.625rem 2.5rem 0.625rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   width: 100%;
@@ -261,8 +255,8 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,13 +267,14 @@ body {
 
 .modal-content {
   background: var(--color-deep-navy);
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 2rem;
   max-width: 480px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -299,12 +294,12 @@ body {
 
 .badge-accent {
   background: var(--color-accent);
-  color: white;
+  color: #1e1e1e;
 }
 
 .badge-emerald {
   background: var(--color-emerald);
-  color: white;
+  color: #1e1e1e;
 }
 
 .badge-amber {
@@ -316,9 +311,9 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--color-surface) 25%,
+    var(--color-surface-light) 25%,
     var(--color-surface-hover) 50%,
-    var(--color-surface) 75%
+    var(--color-surface-light) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -386,7 +381,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-light);
+  background: var(--color-border);
   border-radius: 3px;
 }
 

@@ -20,22 +20,22 @@ export default function TransferPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-midnight/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b-[3px] border-accent bg-[#1e1e1e]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <Link href="/" className="btn-icon no-underline" aria-label="Back">
+              <Link href="/" className="btn-icon bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white no-underline" aria-label="Back">
                 <ArrowLeft size={18} />
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
-                  <Sparkles size={18} className="text-white" />
+                <div className="bg-white rounded-full px-3 py-1 flex items-center justify-center">
+                  <span className="text-black font-bold text-xl tracking-tighter leading-none pb-0.5">noon</span>
                 </div>
                 <div>
-                  <h1 className="text-sm font-bold text-text-primary">
+                  <h1 className="text-sm font-bold text-white">
                     Student Transfers
                   </h1>
-                  <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">
+                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
                     Move students between sheets
                   </p>
                 </div>
