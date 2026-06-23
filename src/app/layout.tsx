@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
+import { AuthProvider } from "@/context/AuthContext";
 import ToastProvider from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
@@ -30,10 +31,12 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-gradient-main">
-        <AppProvider>
-          <ToastProvider />
-          {children}
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <ToastProvider />
+            {children}
+          </AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );

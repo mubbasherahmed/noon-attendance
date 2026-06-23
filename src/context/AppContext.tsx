@@ -16,7 +16,7 @@ import { Room, Student, AttendanceUpdate, Campus } from "@/lib/types";
 // =============================================
 
 interface PendingChange {
-  studentId: string;
+  rollNumber: string;
   status: "Present" | "Absent" | null;
 }
 
@@ -40,8 +40,8 @@ interface AppContextType {
 
   // Attendance (optimistic)
   pendingChanges: Map<string, PendingChange>;
-  getStudentStatus: (studentId: string) => "Present" | "Absent" | null;
-  setStudentStatus: (studentId: string, status: "Present" | "Absent" | null) => void;
+  getStudentStatus: (rollNumber: string) => "Present" | "Absent" | null;
+  setStudentStatus: (rollNumber: string, status: "Present" | "Absent" | null) => void;
   hasPendingChanges: boolean;
   pendingCount: number;
   saveSession: () => Promise<{ success: boolean; error?: string }>;
@@ -152,25 +152,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Optimistic Status Helpers ──
   const getStudentStatus = useCallback(
-    (studentId: string): "Present" | "Absent" | null => {
-      const pending = pendingChanges.get(studentId);
+    (rollNumber: string): "Present" | "Absent" | null => {
+      const pending = pendingChanges.get(rollNumber);
       if (pending) return pending.status;
-      const student = students.find((s) => s.studentId === studentId);
+      const student = students.find((s) => s.rollNumber === rollNumber);
       return student?.todayStatus || null;
     },
     [pendingChanges, students]
   );
 
   const setStudentStatus = useCallback(
-    (studentId: string, status: "Present" | "Absent" | null) => {
+    (rollNumber: string, status: "Present" | "Absent" | null) => {
       setPendingChanges((prev) => {
         const next = new Map(prev);
-        const student = students.find((s) => s.studentId === studentId);
+        const student = students.find((s) => s.rollNumber === rollNumber);
         
         if (student?.todayStatus === status) {
-          next.delete(studentId);
+          next.delete(rollNumber);
         } else {
-          next.set(studentId, { studentId, status });
+          next.set(rollNumber, { rollNumber, status });
         }
         return next;
       });

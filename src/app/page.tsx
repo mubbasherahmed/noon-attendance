@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import CampusSelector from "@/components/dashboard/CampusSelector";
 import RoomGrid from "@/components/dashboard/RoomGrid";
-import TransferModal from "@/components/transfer/TransferModal";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 import {
   DoorOpen,
   Users,
@@ -24,7 +26,19 @@ export default function HomePage() {
     sheetNames,
   } = useApp();
 
-  const [transferOpen, setTransferOpen] = useState(false);
+  const { isAdmin, isUser, loading, logout } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!loading && !isAdmin && !isUser) {
+      router.push("/login");
+    }
+  }, [loading, isAdmin, isUser, router]);
+
+  if (loading || (!isAdmin && !isUser)) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-text-muted">Loading...</div>;
+  }
+
 
   // Stats
   const totalRooms = rooms.length;
@@ -55,12 +69,14 @@ export default function HomePage() {
             {/* Campus Selector + Actions */}
             <div className="flex items-center gap-3">
               <CampusSelector />
-              <button
-                onClick={() => setTransferOpen(true)}
-                className="btn-secondary hidden sm:flex"
-              >
-                <ArrowRightLeft size={16} />
-                Transfer
+              {isAdmin && (
+                <Link href="/enrollment" className="btn-secondary hidden sm:flex border-accent/50 text-accent hover:bg-accent/10">
+                  <Sparkles size={16} />
+                  Manage Enrollments
+                </Link>
+              )}
+              <button onClick={logout} className="btn-secondary hidden sm:flex text-rose hover:bg-rose/10 border-rose/20">
+                Logout
               </button>
             </div>
           </div>
@@ -120,13 +136,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Mobile Transfer Button */}
-            <button
-              onClick={() => setTransferOpen(true)}
-              className="btn-secondary sm:hidden"
-            >
-              <ArrowRightLeft size={16} />
-            </button>
+
             <button
               onClick={refreshRooms}
               disabled={loadingRooms}
@@ -152,12 +162,7 @@ export default function HomePage() {
         </footer>
       </main>
 
-      {/* Transfer Modal */}
-      <TransferModal
-        isOpen={transferOpen}
-        onClose={() => setTransferOpen(false)}
-        onComplete={refreshRooms}
-      />
+
     </div>
   );
 }

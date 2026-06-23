@@ -32,17 +32,17 @@ export async function POST(request: NextRequest) {
     const batchData: { range: string; values: (string | number)[][] }[] = [];
 
     // Find the date column
-    const headerRows = await getSheetData("Attendance_Data!A1:ZZ1");
+    const headerRows = await getSheetData("Attendance!A1:ZZ1");
     const headers = headerRows[0] || [];
     let dateColIndex = headers.findIndex((h) => h?.trim() === date.trim());
 
     if (dateColIndex === -1) {
       // Create new column for this date
       dateColIndex = headers.length;
-      if (dateColIndex < 6) dateColIndex = 6; // Start from column G if somehow empty
+      if (dateColIndex < 11) dateColIndex = 11; // Start from column L if somehow empty
       const letter = colIndexToLetter(dateColIndex);
       batchData.push({
-        range: `Attendance_Data!${letter}1`,
+        range: `Attendance!${letter}1`,
         values: [[date]],
       });
     }
@@ -50,16 +50,16 @@ export async function POST(request: NextRequest) {
     const colLetter = colIndexToLetter(dateColIndex);
 
     for (const update of updates) {
-      const student = allStudents.find((s) => s.studentId === update.studentId);
+      const student = allStudents.find((s) => s.rollNumber === update.rollNumber);
       if (!student) {
-        errors.push(`Student "${update.studentId}" not found`);
+        errors.push(`Student "${update.rollNumber}" not found`);
         continue;
       }
 
       if (!update.status) continue; // Unselected
 
       batchData.push({
-        range: `Attendance_Data!${colLetter}${student.rowIndex}`,
+        range: `Attendance!${colLetter}${student.rowIndex}`,
         values: [[update.status]],
       });
     }

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Room } from "@/lib/types";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { DoorOpen, FileSpreadsheet, ArrowRightLeft, Edit2, Trash2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { RoomFormModal } from "./RoomFormModal";
@@ -15,6 +16,7 @@ interface RoomCardProps {
 
 export default function RoomCard({ room }: RoomCardProps) {
   const { sheetNames, refreshRooms, updateRoom, deleteRoom } = useApp();
+  const { isAdmin } = useAuth();
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [newSheet, setNewSheet] = useState(room.currentSheetName);
@@ -89,23 +91,25 @@ export default function RoomCard({ room }: RoomCardProps) {
               <p className="text-xs text-text-muted mt-0.5">ID: {room.roomId}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setEditModalOpen(true)}
-              className="p-1.5 text-text-muted hover:text-white transition-colors rounded-md hover:bg-white/5"
-              title="Edit Room"
-            >
-              <Edit2 size={14} />
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="p-1.5 text-text-muted hover:text-red-400 transition-colors rounded-md hover:bg-red-400/10"
-              title="Delete Room"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setEditModalOpen(true)}
+                className="p-1.5 text-text-muted hover:text-white transition-colors rounded-md hover:bg-white/5"
+                title="Edit Room"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-1.5 text-text-muted hover:text-red-400 transition-colors rounded-md hover:bg-red-400/10"
+                title="Delete Room"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Current Sheet */}
@@ -124,16 +128,18 @@ export default function RoomCard({ room }: RoomCardProps) {
           >
             Take Attendance
           </Link>
-          <button
-            onClick={() => {
-              setNewSheet(room.currentSheetName);
-              setSwapModalOpen(true);
-            }}
-            className="btn-icon"
-            title="Swap Sheet"
-          >
-            <ArrowRightLeft size={16} />
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setNewSheet(room.currentSheetName);
+                setSwapModalOpen(true);
+              }}
+              className="btn-icon"
+              title="Swap Sheet"
+            >
+              <ArrowRightLeft size={16} />
+            </button>
+          )}
         </div>
       </div>
 

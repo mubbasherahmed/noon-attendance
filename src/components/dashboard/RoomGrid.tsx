@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import RoomCard from "./RoomCard";
 import { SkeletonCard } from "@/components/ui/LoadingSpinner";
 import { DoorOpen, Plus } from "lucide-react";
@@ -11,6 +12,7 @@ import { Room } from "@/lib/types";
 
 export default function RoomGrid() {
   const { rooms, loadingRooms, selectedCampus, addRoom } = useApp();
+  const { isAdmin } = useAuth();
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   async function handleAddSubmit(room: Partial<Room> | Room) {
@@ -41,16 +43,18 @@ export default function RoomGrid() {
           </h3>
           <p className="text-sm text-text-muted max-w-md mb-6">
             {selectedCampus
-              ? `No rooms configured for "${selectedCampus}". Add your first room below.`
-              : "No rooms configured yet. Add your first room to get started!"}
+              ? `No rooms configured for "${selectedCampus}". ${isAdmin ? 'Add your first room below.' : 'Please contact an administrator.'}`
+              : "No rooms configured yet."}
           </p>
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="btn-primary"
-          >
-            <Plus size={16} />
-            <span>Add First Room</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setAddModalOpen(true)}
+              className="btn-primary"
+            >
+              <Plus size={16} />
+              <span>Add First Room</span>
+            </button>
+          )}
         </div>
         <RoomFormModal
           isOpen={addModalOpen}
@@ -69,7 +73,7 @@ export default function RoomGrid() {
           <RoomCard key={room.roomId} room={room} />
         ))}
         {/* Add Room Card */}
-        {selectedCampus && (
+        {selectedCampus && isAdmin && (
           <button
             onClick={() => setAddModalOpen(true)}
             className="glass-card flex flex-col items-center justify-center p-6 min-h-[160px] border-dashed hover:bg-white/5 transition-colors group cursor-pointer"

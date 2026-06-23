@@ -176,22 +176,35 @@ export async function getRooms(campusFilter?: string): Promise<Room[]> {
   return rooms;
 }
 
-/**
- * Fetch all students from the "Attendance_Data" tab.
- * Columns: Sheet_Name | Student ID | Student Name | Roll Number | Attendance_Counter | Campus_Name
- */
 export async function getStudents(
   campusFilter?: string,
-  sheetFilter?: string,
+  roomFilter?: string,
   dateFilter?: string
 ): Promise<Student[]> {
-  const rows = await getSheetData("Attendance_Data!A1:ZZ");
+  const rows = await getSheetData("Attendance!A1:ZZ");
   if (!rows || rows.length < 2) return [];
 
   const headers = rows[0] || [];
+  
+  const colIndex = (name: string) => 
+    headers.findIndex((h) => h?.toString().trim().toLowerCase() === name.toLowerCase());
+
+  const rollNoIdx = colIndex("Roll no");
+  const studentNameIdx = colIndex("Student name");
+  const parentNameIdx = colIndex("Parent name");
+  const shiftIdx = colIndex("Shift");
+  const gradeIdx = colIndex("Grade");
+  const roomIdx = colIndex("Room");
+  const onlineTeacherIdx = colIndex("Online Teacher");
+  const facilitatorIdx = colIndex("Facilitator");
+  const droppedOutIdx = colIndex("Dropped out?");
+  const picIdx = colIndex("Pic");
+  const status30DIdx = colIndex("Status (30 D)");
+  const campusNameIdx = colIndex("Campus Name");
+
   let dateColIndex = -1;
   if (dateFilter) {
-    dateColIndex = headers.findIndex((h) => h?.trim() === dateFilter.trim());
+    dateColIndex = headers.findIndex((h) => h?.toString().trim() === dateFilter.trim());
   }
 
   const dataRows = rows.slice(1);
@@ -205,12 +218,19 @@ export async function getStudents(
     }
 
     return {
-      sheetName: row[0] || "",
-      studentId: row[1] || "",
-      studentName: row[2] || "",
-      rollNumber: row[3] || "",
+      rollNumber: rollNoIdx !== -1 ? (row[rollNoIdx] || "").toString() : "",
+      studentName: studentNameIdx !== -1 ? (row[studentNameIdx] || "").toString() : "",
+      parentName: parentNameIdx !== -1 ? (row[parentNameIdx] || "").toString() : "",
+      shift: shiftIdx !== -1 ? (row[shiftIdx] || "").toString() : "",
+      grade: gradeIdx !== -1 ? (row[gradeIdx] || "").toString() : "",
+      room: roomIdx !== -1 ? (row[roomIdx] || "").toString() : "",
+      onlineTeacher: onlineTeacherIdx !== -1 ? (row[onlineTeacherIdx] || "").toString() : "",
+      facilitator: facilitatorIdx !== -1 ? (row[facilitatorIdx] || "").toString() : "",
+      droppedOut: droppedOutIdx !== -1 ? (row[droppedOutIdx] || "").toString() : "",
+      pic: picIdx !== -1 ? (row[picIdx] || "").toString() : "",
+      status30D: status30DIdx !== -1 ? (row[status30DIdx] || "").toString() : "",
+      campusName: campusNameIdx !== -1 ? (row[campusNameIdx] || "").toString() : "",
       todayStatus,
-      campusName: row[5] || "",
       rowIndex: idx + 2,
     };
   });
@@ -220,9 +240,9 @@ export async function getStudents(
       (s) => s.campusName.toLowerCase() === campusFilter.toLowerCase()
     );
   }
-  if (sheetFilter) {
+  if (roomFilter) {
     students = students.filter(
-      (s) => s.sheetName.toLowerCase() === sheetFilter.toLowerCase()
+      (s) => s.room.toLowerCase() === roomFilter.toLowerCase()
     );
   }
 

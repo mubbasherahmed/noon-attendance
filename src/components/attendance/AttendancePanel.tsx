@@ -5,9 +5,7 @@ import { useApp } from "@/context/AppContext";
 import StudentRow from "./StudentRow";
 import { SkeletonRow } from "@/components/ui/LoadingSpinner";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Save, Users, AlertCircle, UserPlus } from "lucide-react";
-import { StudentFormModal } from "./StudentFormModal";
-import { Student } from "@/lib/types";
+import { Save, Users, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface AttendancePanelProps {
@@ -23,19 +21,8 @@ export default function AttendancePanel({ sheetName }: AttendancePanelProps) {
     pendingCount,
     saveSession,
     savingSession,
-    addStudent,
-    selectedCampus,
   } = useApp();
 
-  const [addModalOpen, setAddModalOpen] = useState(false);
-
-  async function handleAddSubmit(student: Partial<Student> | Student) {
-    const res = await addStudent(student);
-    if (res.success) {
-      toast.success("Student added successfully");
-    }
-    return res;
-  }
 
   useEffect(() => {
     refreshStudents(sheetName);
@@ -73,15 +60,7 @@ export default function AttendancePanel({ sheetName }: AttendancePanelProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="btn-secondary hidden sm:flex"
-            title="Add Student"
-          >
-            <UserPlus size={16} />
-            <span>Add Student</span>
-          </button>
-          
+          {/* Add Student button removed - handled in Admin view */}
           <button
             onClick={handleSave}
             disabled={!hasPendingChanges || savingSession}
@@ -129,18 +108,11 @@ export default function AttendancePanel({ sheetName }: AttendancePanelProps) {
           </div>
         ) : (
           students.map((student) => (
-            <StudentRow key={student.studentId} student={student} />
+            <StudentRow key={student.rollNumber} student={student} />
           ))
         )}
       </div>
 
-      <StudentFormModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSubmit={handleAddSubmit}
-        defaultSheet={sheetName}
-        defaultCampus={selectedCampus}
-      />
     </div>
   );
 }

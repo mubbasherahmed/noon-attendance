@@ -20,18 +20,91 @@ export interface Room {
 }
 
 export interface Student {
-  studentId: string;
-  studentName: string;
   rollNumber: string;
-  sheetName: string;
-  todayStatus: "Present" | "Absent" | null;
+  studentName: string;
+  parentName: string;
+  shift: string;
+  grade: string;
+  room: string;
+  onlineTeacher: string;
+  facilitator: string;
+  droppedOut: string;
+  pic: string;
+  status30D: string;
   campusName: string;
+  todayStatus: "Present" | "Absent" | null;
   /** 1-indexed row number in the Google Sheet (for updates) */
   rowIndex: number;
 }
 
+export interface EnrollmentData {
+  rollNumber: string;
+  studentName: string;
+  campusName: string;
+  enrollmentDate: string;
+  shift: string;
+  grade: string;
+  roomNumber: string;
+  facilitator: string;
+  claimedAge: string;
+  gender: string;
+  isOrphan: string;
+  deceasedParents: string;
+  medicalConditionCategory: string;
+  specifyMedicalCondition: string;
+  doesStudentWork: string;
+  studentWorkDetails: string;
+  careerGoals: string;
+  hobbies: string;
+  ooscClassification: string;
+  lastSchoolAttended: string;
+  lastGradeCompleted: string;
+  reasonForOos: string;
+  religion: string;
+  nationality: string;
+  fatherName: string;
+  relationship: string;
+  fatherEducation: string;
+  fatherProfession: string;
+  fatherIncome: string;
+  fatherCnic: string;
+  fatherCnicCheck: string;
+  numberOfSiblings: string;
+  parentContactNumber: string;
+  parentContactNumberCheck: string;
+  motherName: string;
+  motherEducation: string;
+  motherProfession: string;
+  motherIncome: string;
+  motherCnic: string;
+  motherCnicCheck: string;
+  homeAddress: string;
+  distanceToLearningCentre: string;
+  emergencyContactName: string;
+  emergencyContactNumber: string;
+  highestLevelDocument: string;
+  documentSubmitted: string;
+  bFormNumber: string;
+  bFormNumberCheck: string;
+  dobOnBForm: string;
+  currentAgeBForm: string;
+  studentPictureUploaded: string;
+  bFormUploaded: string;
+  providedUniform: string;
+  providedBooks: string;
+  providedWorkbooks: string;
+  studentProfileSorted: string;
+  studentStatus30Days: string;
+  enrollmentMonth: string;
+  monthsSinceEnrollment: string;
+  enrollmentWeek: string;
+  firstAttended: string;
+  lastAttended: string;
+  rowIndex?: number;
+}
+
 export interface AttendanceUpdate {
-  studentId: string;
+  rollNumber: string;
   status: "Present" | "Absent" | null;
 }
 
