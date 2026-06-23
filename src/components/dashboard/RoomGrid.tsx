@@ -33,17 +33,32 @@ export default function RoomGrid() {
 
   if (rooms.length === 0) {
     return (
-      <div className="glass-card-static p-12 text-center animate-fade-in">
-        <DoorOpen size={48} className="text-text-muted mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-text-secondary mb-2">
-          No Rooms Found
-        </h3>
-        <p className="text-sm text-text-muted max-w-md mx-auto">
-          {selectedCampus
-            ? `No rooms configured for "${selectedCampus}". Add rooms to the "Rooms" tab in your Google Sheet.`
-            : "Select a campus to view rooms."}
-        </p>
-      </div>
+      <>
+        <div className="glass-card-static p-12 text-center animate-fade-in flex flex-col items-center justify-center">
+          <DoorOpen size={48} className="text-text-muted mb-4" />
+          <h3 className="text-lg font-medium text-text-secondary mb-2">
+            No Rooms Found
+          </h3>
+          <p className="text-sm text-text-muted max-w-md mb-6">
+            {selectedCampus
+              ? `No rooms configured for "${selectedCampus}". Add your first room below.`
+              : "No rooms configured yet. Add your first room to get started!"}
+          </p>
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="btn-primary"
+          >
+            <Plus size={16} />
+            <span>Add First Room</span>
+          </button>
+        </div>
+        <RoomFormModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onSubmit={handleAddSubmit}
+          defaultCampus={selectedCampus || ""}
+        />
+      </>
     );
   }
 

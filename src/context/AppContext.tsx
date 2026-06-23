@@ -241,12 +241,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(room),
       });
       const data = await res.json();
-      if (res.ok) await refreshRooms();
+      if (res.ok) {
+        if (!selectedCampus) {
+          window.location.reload();
+        } else {
+          await refreshRooms();
+        }
+      }
       return { success: res.ok, error: data.error };
     } catch (e) {
       return { success: false, error: String(e) };
     }
-  }, [refreshRooms]);
+  }, [refreshRooms, selectedCampus]);
 
   const updateRoom = useCallback(async (room: Room) => {
     try {
