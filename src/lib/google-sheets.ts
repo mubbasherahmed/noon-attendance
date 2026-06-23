@@ -11,7 +11,14 @@ import { Room, Student } from "./types";
 
 function getAuthClient() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  if (privateKey) {
+    // Remove wrapping quotes if they were accidentally added in Vercel
+    privateKey = privateKey.replace(/^"|"$/g, "");
+    // Replace literal escaped newlines with actual newlines
+    privateKey = privateKey.replace(/\\n/g, "\n");
+  }
 
   if (!clientEmail || !privateKey) {
     throw new Error(
