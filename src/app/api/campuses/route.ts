@@ -8,9 +8,9 @@ export async function GET() {
   try {
     const supabase = createServerClient();
 
-    // Get distinct campus names with student counts
+    // Group by campus_name to get counts
     const { data, error } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .select("campus_name");
 
     if (error) throw error;

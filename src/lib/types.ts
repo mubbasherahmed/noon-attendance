@@ -1,33 +1,33 @@
+import { EnrollmentRow } from "./database.types";
+
 // =============================================
-// Attendance Management App — Type Definitions
-// Aligned with Supabase master_attendance table
+// Domain Models (Mapped to new Schema)
 // =============================================
 
-import { MasterAttendanceRow } from "./database.types";
+export type Student = EnrollmentRow;
 
-/** Re-export the row type as Student for convenience */
-export type Student = MasterAttendanceRow;
-
-/** Campus summary derived from DISTINCT campus_name */
+// Derived summaries used in dashboard/navigation
 export interface CampusSummary {
   campus_name: string;
-  student_count: number;
+  studentCount: number;
 }
 
-/** Room summary derived from GROUP BY room */
 export interface RoomSummary {
   room: string;
-  student_count: number;
+  studentCount: number;
 }
 
-/** Single attendance status change */
+// =============================================
+// API Payloads
+// =============================================
+
 export interface AttendanceUpdate {
   roll_number: string;
-  status: "Present" | "Absent" | "Leave" | null;
+  status: "Present" | "Absent" | "Leave" | "Late" | "No class";
 }
 
-/** Batch save request for attendance */
 export interface BatchSaveRequest {
+  date: string;
   campus_name: string;
   room: string;
   updates: AttendanceUpdate[];
@@ -35,26 +35,7 @@ export interface BatchSaveRequest {
 
 export interface BatchSaveResponse {
   success: boolean;
-  updatedCount: number;
+  message: string;
   errors?: string[];
-}
-
-/** Student transfer / room change request */
-export interface TransferRequest {
-  roll_number: string;
-  campus_name: string;
-  new_campus?: string;
-  new_room?: string;
-}
-
-/** Batch room reassignment */
-export interface RoomReassignRequest {
-  campus_name: string;
-  roll_numbers: string[];
-  new_room: string;
-}
-
-export interface ApiError {
-  error: string;
-  details?: string;
+  updatedCount?: number;
 }

@@ -1,19 +1,20 @@
-// /api/students — CRUD operations on master_attendance
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/students?campus=X&room=Y&search=Z
 export async function GET(request: NextRequest) {
   try {
-    const campus = request.nextUrl.searchParams.get("campus") || undefined;
-    const room = request.nextUrl.searchParams.get("room") || undefined;
-    const search = request.nextUrl.searchParams.get("search") || undefined;
+    const searchParams = request.nextUrl.searchParams;
+    const campus = searchParams.get("campus");
+    const room = searchParams.get("room");
+    const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
     const supabase = createServerClient();
 
-    let query = supabase.from("master_attendance").select("*");
+    let query = supabase.from("enrollments").select("*", { count: "exact" });
 
     if (campus) {
       query = query.eq("campus_name", campus);
@@ -23,27 +24,35 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       query = query.or(
-        `student_name.ilike.%${search}%,roll_number.ilike.%${search}%,guardian_name.ilike.%${search}%`
+        `student_name.ilike.%${search}%,roll_number.ilike.%${search}%`
       );
     }
 
-    query = query.order("roll_number", { ascending: true });
+    // Pagination
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.range(from, to).order("roll_number", { ascending: true });
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
 
     if (error) throw error;
 
-    return NextResponse.json({ students: data || [] });
+    return NextResponse.json({
+      data,
+      count,
+      page,
+      limit,
+      totalPages: count ? Math.ceil(count / limit) : 0,
+    });
   } catch (error) {
-    console.error("Failed to fetch students:", error);
+    console.error("GET /api/students error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch students", details: String(error) },
+      { error: "Failed to fetch students" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/students — Insert a new student
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -51,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     if (!campus_name || !roll_number || !student_name || !room) {
       return NextResponse.json(
-        { error: "campus_name, roll_number, student_name, and room are required" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -59,23 +68,19 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient();
 
     const { data, error } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .insert({
         campus_name,
         roll_number,
         student_name,
         room,
-        guardian_name: body.guardian_name || null,
+        gaurdian_name: body.gaurdian_name || null,
         gender: body.gender || null,
         shift: body.shift || null,
         grade: body.grade || null,
         online_teacher: body.online_teacher || null,
         facilitator: body.facilitator || null,
-        pic: body.pic || null,
-        sessions_present: 0,
-        sessions_absent: 0,
-        sessions_on_leave: 0,
-        days_attended: 0,
+        student_status: body.student_status || "Active",
       })
       .select()
       .single();
@@ -83,32 +88,31 @@ export async function POST(request: NextRequest) {
     if (error) {
       if (error.code === "23505") {
         return NextResponse.json(
-          { error: "A student with this roll number already exists in this campus/room" },
+          { error: `Roll number ${roll_number} already exists in ${campus_name}` },
           { status: 409 }
         );
       }
       throw error;
     }
 
-    return NextResponse.json({ success: true, student: data });
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Failed to create student:", error);
+    console.error("POST /api/students error:", error);
     return NextResponse.json(
-      { error: "Failed to create student", details: String(error) },
+      { error: "Failed to create student" },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/students — Update a student row (campus transfer, room change, field edits)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, campus_name, roll_number, ...updates } = body;
 
     if (!id) {
       return NextResponse.json(
-        { error: "id is required for updates" },
+        { error: "Student ID is required for update" },
         { status: 400 }
       );
     }
@@ -116,32 +120,40 @@ export async function PUT(request: NextRequest) {
     const supabase = createServerClient();
 
     const { data, error } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .update(updates)
       .eq("id", id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: `Roll number ${roll_number} is already taken in ${campus_name}` },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
-    return NextResponse.json({ success: true, student: data });
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Failed to update student:", error);
+    console.error("PUT /api/students error:", error);
     return NextResponse.json(
-      { error: "Failed to update student", details: String(error) },
+      { error: "Failed to update student" },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/students?id=X — Delete a student by id
 export async function DELETE(request: NextRequest) {
   try {
-    const id = request.nextUrl.searchParams.get("id");
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
-        { error: "id query parameter is required" },
+        { error: "Student ID is required for deletion" },
         { status: 400 }
       );
     }
@@ -149,17 +161,17 @@ export async function DELETE(request: NextRequest) {
     const supabase = createServerClient();
 
     const { error } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .delete()
-      .eq("id", parseInt(id));
+      .eq("id", id);
 
     if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete student:", error);
+    console.error("DELETE /api/students error:", error);
     return NextResponse.json(
-      { error: "Failed to delete student", details: String(error) },
+      { error: "Failed to delete student" },
       { status: 500 }
     );
   }

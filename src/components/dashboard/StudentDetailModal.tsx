@@ -107,18 +107,9 @@ export default function StudentDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            {student.pic ? (
-              <img
-                src={student.pic}
-                alt=""
-                className="w-12 h-12 rounded-full object-cover border-2 border-border"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center">
-                <User size={20} className="text-accent" />
-              </div>
-            )}
+            <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center">
+              <User size={20} className="text-accent" />
+            </div>
             <div>
               <h2 className="text-lg font-semibold text-text-primary">
                 {student.student_name}
@@ -146,14 +137,17 @@ export default function StudentDetailModal({
             <div className="grid grid-cols-2 gap-4">
               {[
                 { key: "student_name", label: "Student Name" },
-                { key: "guardian_name", label: "Guardian Name" },
+                { key: "gaurdian_name", label: "Guardian Name" },
                 { key: "gender", label: "Gender" },
+                { key: "age", label: "Age" },
+                { key: "contact_number", label: "Contact Number" },
                 { key: "shift", label: "Shift" },
                 { key: "grade", label: "Grade" },
                 { key: "room", label: "Room" },
                 { key: "campus_name", label: "Campus" },
                 { key: "online_teacher", label: "Online Teacher" },
                 { key: "facilitator", label: "Facilitator" },
+                { key: "student_status", label: "Status (Active/Drop)" },
               ].map((field) => (
                 <div key={field.key}>
                   <label className="block text-xs font-medium text-text-muted mb-1">
@@ -197,11 +191,14 @@ export default function StudentDetailModal({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 { icon: MapPin, label: "Room", value: student.room },
-                { icon: User, label: "Guardian", value: student.guardian_name },
+                { icon: User, label: "Guardian", value: student.gaurdian_name },
                 { icon: Calendar, label: "Grade", value: student.grade },
                 { icon: TrendingUp, label: "Shift", value: student.shift },
                 { icon: User, label: "Teacher", value: student.online_teacher },
                 { icon: User, label: "Facilitator", value: student.facilitator },
+                { icon: User, label: "Age", value: student.age },
+                { icon: User, label: "Contact", value: student.contact_number },
+                { icon: User, label: "Status", value: student.student_status },
               ].map((item, i) => (
                 <div key={i} className="p-3 rounded-xl bg-surface-light/50 border border-border">
                   <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
@@ -214,121 +211,12 @@ export default function StudentDetailModal({
               ))}
             </div>
 
-            {/* Aggregate Stats */}
-            <div>
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                Attendance Summary
-              </h3>
-              <div className="grid grid-cols-4 gap-3">
-                <div className="text-center p-3 rounded-xl bg-emerald/5 border border-emerald/15">
-                  <p className="text-xl font-bold text-emerald">{student.sessions_present}</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Present</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-rose/5 border border-rose/15">
-                  <p className="text-xl font-bold text-rose">{student.sessions_absent}</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Absent</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-amber/5 border border-amber/15">
-                  <p className="text-xl font-bold text-amber">{student.sessions_on_leave}</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Leave</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-cyan/5 border border-cyan/15">
-                  <p className="text-xl font-bold text-cyan">{student.days_attended}</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Days</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Daily Retention Heatmap */}
-            <div>
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                Daily Retention (7 days)
-              </h3>
-              <div className="flex gap-2">
-                {dailyRetention.map((day, i) => (
-                  <div key={i} className="flex-1 text-center">
-                    <div
-                      className={`w-full h-8 rounded-lg retention-dot-lg ${getRetentionColor(day.value)}`}
-                      style={{
-                        background:
-                          getRetentionColor(day.value) === "present" ? "rgba(88, 214, 157, 0.2)" :
-                          getRetentionColor(day.value) === "absent" ? "rgba(244, 63, 94, 0.2)" :
-                          getRetentionColor(day.value) === "leave" ? "rgba(245, 158, 11, 0.2)" :
-                          "rgba(100, 116, 139, 0.1)",
-                        border: `1px solid ${
-                          getRetentionColor(day.value) === "present" ? "rgba(88, 214, 157, 0.3)" :
-                          getRetentionColor(day.value) === "absent" ? "rgba(244, 63, 94, 0.3)" :
-                          getRetentionColor(day.value) === "leave" ? "rgba(245, 158, 11, 0.3)" :
-                          "rgba(100, 116, 139, 0.15)"
-                        }`,
-                      }}
-                    />
-                    <p className="text-[9px] text-text-muted mt-1">{day.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Weekly & Monthly */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                  Weekly ({student.wow_retention || "—"})
-                </h3>
-                <div className="flex gap-1.5">
-                  {weeklyRetention.map((week, i) => (
-                    <div key={i} className="flex-1 text-center">
-                      <div
-                        className="w-full h-6 rounded"
-                        style={{
-                          background:
-                            getRetentionColor(week.value) === "present" ? "rgba(88, 214, 157, 0.25)" :
-                            getRetentionColor(week.value) === "absent" ? "rgba(244, 63, 94, 0.25)" :
-                            "rgba(100, 116, 139, 0.1)",
-                        }}
-                      />
-                      <p className="text-[8px] text-text-muted mt-0.5">{week.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                  Monthly ({student.mom_retention || "—"})
-                </h3>
-                <div className="flex gap-1.5">
-                  {monthlyRetention.map((month, i) => (
-                    <div key={i} className="flex-1 text-center">
-                      <div
-                        className="w-full h-6 rounded"
-                        style={{
-                          background:
-                            getRetentionColor(month.value) === "present" ? "rgba(88, 214, 157, 0.25)" :
-                            getRetentionColor(month.value) === "absent" ? "rgba(244, 63, 94, 0.25)" :
-                            "rgba(100, 116, 139, 0.1)",
-                        }}
-                      />
-                      <p className="text-[8px] text-text-muted mt-0.5">{month.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              {[
-                { label: "First Attended", value: student.first_attended },
-                { label: "Last Attended", value: student.last_attended },
-                { label: "Absent Since", value: student.absent_since },
-                { label: "Status (30D)", value: student.status_30d },
-              ].map((item, i) => (
-                <div key={i} className="p-2 rounded-lg bg-surface-light/30">
-                  <p className="text-[9px] uppercase tracking-wider text-text-muted">{item.label}</p>
-                  <p className="text-xs font-medium text-text-secondary mt-0.5">{item.value || "—"}</p>
-                </div>
-              ))}
-            </div>
+            {/* Note to admin regarding heatmaps */}
+            {isAdmin && (
+               <div className="p-4 rounded-xl bg-emerald/5 border border-emerald/15 text-center mt-6">
+                 <p className="text-sm text-emerald">Detailed Attendance Heatmaps and analytics will be available in the dedicated Admin Dashboard.</p>
+               </div>
+            )}
           </div>
         )}
       </div>

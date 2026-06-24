@@ -27,21 +27,18 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient();
 
     const { data, error } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .insert({
         campus_name: campusName || "Unassigned",
         roll_number: rollNumber,
         student_name: studentName,
         room: roomNumber || "Unassigned",
-        guardian_name: fatherName || null,
+        gaurdian_name: fatherName || null,
         gender: gender || null,
         shift: shift || null,
         grade: grade || null,
         facilitator: facilitator || null,
-        sessions_present: 0,
-        sessions_absent: 0,
-        sessions_on_leave: 0,
-        days_attended: 0,
+        student_status: "Active"
       })
       .select()
       .single();

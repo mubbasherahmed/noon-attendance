@@ -22,20 +22,10 @@ export default function StudentRow({ student }: StudentRowProps) {
 
   return (
     <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 border-b border-border last:border-b-0 hover:bg-surface-hover/50 transition-colors">
-      {/* Student Avatar */}
       <div className="shrink-0">
-        {student.pic ? (
-          <img
-            src={student.pic}
-            alt=""
-            className="w-10 h-10 rounded-full object-cover border border-border"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-            <User size={18} className="text-accent" />
-          </div>
-        )}
+        <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+          <User size={18} className="text-accent" />
+        </div>
       </div>
 
       {/* Student Info */}
@@ -47,13 +37,13 @@ export default function StudentRow({ student }: StudentRowProps) {
           <span className="text-xs text-text-muted">
             Roll: {student.roll_number}
           </span>
-          {student.status_30d && (
+          {student.student_status && (
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-              student.status_30d.toLowerCase().includes("active") ? "bg-emerald/10 text-emerald" :
-              student.status_30d.toLowerCase().includes("drop") ? "bg-rose/10 text-rose" :
+              student.student_status.toLowerCase().includes("active") ? "bg-emerald/10 text-emerald" :
+              student.student_status.toLowerCase().includes("drop") ? "bg-rose/10 text-rose" :
               "bg-surface-light text-text-muted"
             }`}>
-              {student.status_30d}
+              {student.student_status}
             </span>
           )}
         </div>

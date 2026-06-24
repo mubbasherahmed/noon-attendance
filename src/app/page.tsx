@@ -75,11 +75,11 @@ export default function HomePage() {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (s) =>
-          s.student_name?.toLowerCase().includes(q) ||
-          s.roll_number?.toLowerCase().includes(q) ||
-          s.guardian_name?.toLowerCase().includes(q)
-      );
-    }
+        s.student_name?.toLowerCase().includes(q) ||
+        s.roll_number?.toLowerCase().includes(q) ||
+        s.gaurdian_name?.toLowerCase().includes(q)
+    );
+  }
 
     if (statusFilter !== "all") {
       if (statusFilter === "active") {

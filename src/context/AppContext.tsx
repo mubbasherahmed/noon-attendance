@@ -40,9 +40,11 @@ interface AppContextType {
   setSelectedRoom: (room: string) => void;
 
   // Attendance (optimistic)
+  attendanceDate: string;
+  setAttendanceDate: (date: string) => void;
   pendingChanges: Map<string, PendingChange>;
-  getStudentStatus: (rollNumber: string) => "Present" | "Absent" | "Leave" | null;
-  setStudentStatus: (rollNumber: string, status: "Present" | "Absent" | "Leave" | null) => void;
+  getStudentStatus: (rollNumber: string) => "Present" | "Absent" | "Leave" | "Late" | "No class" | null;
+  setStudentStatus: (rollNumber: string, status: "Present" | "Absent" | "Leave" | "Late" | "No class" | null) => void;
   hasPendingChanges: boolean;
   pendingCount: number;
   saveSession: () => Promise<{ success: boolean; error?: string }>;
@@ -69,10 +71,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
+  // ── Date State ──
+  const [attendanceDate, setAttendanceDate] = useState<string>(() => {
+    // Format: DD-MMM-YYYY
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = d.toLocaleString('en-GB', { month: 'short' });
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  });
+
   // ── Students State ──
   const [students, setStudents] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<string>("");
+
+  // ── Daily Attendance State ──
+  const [dailyAttendance, setDailyAttendance] = useState<Map<string, string>>(new Map());
 
   // ── Pending Attendance Changes ──
   const [pendingChanges, setPendingChanges] = useState<Map<string, PendingChange>>(
@@ -124,56 +139,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedCampus, refreshRooms]);
 
-  // ── Fetch Students ──
+  // ── Fetch Students & Daily Attendance ──
   const refreshStudents = useCallback(
     async (room?: string) => {
       if (!selectedCampus) return;
       try {
         setLoadingStudents(true);
-        let url = `/api/students?campus=${encodeURIComponent(selectedCampus)}`;
+        
+        // 1. Fetch Students (Enrollments)
+        let url = `/api/students?campus=${encodeURIComponent(selectedCampus)}&limit=1000`;
         const roomFilter = room || selectedRoom;
         if (roomFilter) {
           url += `&room=${encodeURIComponent(roomFilter)}`;
         }
-        const res = await fetch(url);
-        const data = await res.json();
-        setStudents(data.students || []);
+        
+        const [studentRes, attendanceRes] = await Promise.all([
+          fetch(url),
+          roomFilter ? fetch(`/api/attendance?campus=${encodeURIComponent(selectedCampus)}&room=${encodeURIComponent(roomFilter)}&date=${encodeURIComponent(attendanceDate)}`) : Promise.resolve(null)
+        ]);
+
+        const studentData = await studentRes.json();
+        setStudents(studentData.data || []);
+
+        // 2. Fetch Attendance for Date
+        if (attendanceRes) {
+          const attData = await attendanceRes.json();
+          const attMap = new Map();
+          if (Array.isArray(attData)) {
+            attData.forEach((record: any) => {
+              attMap.set(record.roll_number, record.status);
+            });
+          }
+          setDailyAttendance(attMap);
+        } else {
+          setDailyAttendance(new Map());
+        }
+
       } catch (error) {
-        console.error("Failed to fetch students:", error);
+        console.error("Failed to fetch students/attendance:", error);
       } finally {
         setLoadingStudents(false);
       }
     },
-    [selectedCampus, selectedRoom]
+    [selectedCampus, selectedRoom, attendanceDate]
   );
 
   // ── Optimistic Status Helpers ──
   const getStudentStatus = useCallback(
-    (rollNumber: string): "Present" | "Absent" | "Leave" | null => {
+    (rollNumber: string): "Present" | "Absent" | "Leave" | "Late" | "No class" | null => {
       const pending = pendingChanges.get(rollNumber);
-      if (pending) return pending.status;
-      const student = students.find((s) => s.roll_number === rollNumber);
-      return (student?.present_status_current_date as "Present" | "Absent" | "Leave") || null;
+      if (pending) return pending.status as any;
+      const dbStatus = dailyAttendance.get(rollNumber);
+      return (dbStatus as any) || null;
     },
-    [pendingChanges, students]
+    [pendingChanges, dailyAttendance]
   );
 
   const setStudentStatus = useCallback(
-    (rollNumber: string, status: "Present" | "Absent" | "Leave" | null) => {
+    (rollNumber: string, status: "Present" | "Absent" | "Leave" | "Late" | "No class" | null) => {
       setPendingChanges((prev) => {
         const next = new Map(prev);
-        const student = students.find((s) => s.roll_number === rollNumber);
-        const currentDbStatus = student?.present_status_current_date || null;
+        const currentDbStatus = dailyAttendance.get(rollNumber) || null;
 
         if (currentDbStatus === status) {
           next.delete(rollNumber);
         } else {
-          next.set(rollNumber, { roll_number: rollNumber, status });
+          next.set(rollNumber, { roll_number: rollNumber, status: status as any });
         }
         return next;
       });
     },
-    [students]
+    [dailyAttendance]
   );
 
   const resetPending = useCallback(() => {
@@ -195,7 +231,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updates: AttendanceUpdate[] = Array.from(pendingChanges.values()).map(
       (change) => ({
         roll_number: change.roll_number,
-        status: change.status,
+        status: change.status as any,
       })
     );
 
@@ -205,6 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          date: attendanceDate,
           campus_name: selectedCampus,
           room: selectedRoom,
           updates,
@@ -217,7 +254,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { success: false, error: data.error || "Failed to save" };
       }
 
-      // Clear pending changes and refresh students
+      // Clear pending changes and refresh data
       setPendingChanges(new Map());
       await refreshStudents(selectedRoom);
 
@@ -227,7 +264,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setSavingSession(false);
     }
-  }, [pendingChanges, selectedCampus, selectedRoom, refreshStudents]);
+  }, [pendingChanges, selectedCampus, selectedRoom, attendanceDate, refreshStudents]);
 
   // ── CRUD Operations ──
   const updateStudent = useCallback(
@@ -309,6 +346,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshStudents,
         selectedRoom,
         setSelectedRoom,
+        attendanceDate,
+        setAttendanceDate,
         pendingChanges,
         getStudentStatus,
         setStudentStatus,

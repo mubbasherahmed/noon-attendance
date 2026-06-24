@@ -20,6 +20,9 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
     pendingCount,
     saveSession,
     savingSession,
+    attendanceDate,
+    setAttendanceDate,
+    getStudentStatus,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,16 +37,17 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
     );
   }, [students, searchQuery]);
 
-  // Summary stats
-  const presentCount = students.filter((s) => s.present_status_current_date === "Present").length;
-  const absentCount = students.filter((s) => s.present_status_current_date === "Absent").length;
-  const unmarkedCount = students.length - presentCount - absentCount;
+  // Summary stats based on the selected date
+  const presentCount = students.filter((s) => getStudentStatus(s.roll_number) === "Present").length;
+  const absentCount = students.filter((s) => getStudentStatus(s.roll_number) === "Absent").length;
+  const leaveCount = students.filter((s) => getStudentStatus(s.roll_number) === "Leave").length;
+  const unmarkedCount = students.length - presentCount - absentCount - leaveCount;
 
   async function handleSave() {
     const result = await saveSession();
     if (result.success) {
       toast.success("Attendance saved!", {
-        description: `${pendingCount} student(s) updated successfully.`,
+        description: `${pendingCount} student(s) updated successfully for ${attendanceDate}.`,
       });
     } else {
       toast.error("Failed to save attendance", {
@@ -51,6 +55,33 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
       });
     }
   }
+
+  // Handle Date Change
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    // Input format is YYYY-MM-DD
+    const val = e.target.value;
+    if (!val) return;
+    const [year, month, day] = val.split('-');
+    const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const dayStr = String(d.getDate()).padStart(2, '0');
+    const monthStr = d.toLocaleString('en-GB', { month: 'short' });
+    const formattedDate = `${dayStr}-${monthStr}-${year}`;
+    setAttendanceDate(formattedDate);
+  }
+
+  // Convert "DD-MMM-YYYY" to "YYYY-MM-DD" for the input
+  const isoDate = useMemo(() => {
+    try {
+      const parts = attendanceDate.split('-');
+      if (parts.length === 3) {
+        const d = new Date(`${parts[1]} ${parts[0]}, ${parts[2]}`);
+        return d.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      // fallback
+    }
+    return new Date().toISOString().split('T')[0];
+  }, [attendanceDate]);
 
   return (
     <div className="glass-card-static overflow-hidden animate-slide-up">
@@ -62,10 +93,18 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
             <h2 className="text-base font-semibold text-text-primary">
               Student Roster
             </h2>
-            <p className="text-xs text-text-muted mt-0.5">
-              {students.length} student{students.length !== 1 ? "s" : ""} •{" "}
-              {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-text-muted">
+                {students.length} student{students.length !== 1 ? "s" : ""}
+              </span>
+              <span className="text-border text-xs">•</span>
+              <input
+                type="date"
+                value={isoDate}
+                onChange={handleDateChange}
+                className="bg-surface/50 border border-border rounded text-xs px-2 py-0.5 text-text-secondary focus:outline-none focus:border-accent"
+              />
+            </div>
           </div>
         </div>
 

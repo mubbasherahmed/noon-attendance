@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient();
 
     const { data, error } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .select("room")
       .eq("campus_name", campus);
 
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
     const supabase = createServerClient();
 
     const { error, count } = await supabase
-      .from("master_attendance")
+      .from("enrollments")
       .update({ room: new_room })
       .eq("campus_name", campus_name)
       .in("roll_number", roll_numbers);
