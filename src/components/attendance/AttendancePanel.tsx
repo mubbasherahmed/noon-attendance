@@ -5,7 +5,7 @@ import { useApp } from "@/context/AppContext";
 import StudentRow from "./StudentRow";
 import { SkeletonRow } from "@/components/ui/LoadingSpinner";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Save, Users, AlertCircle, Search, UserCheck, UserX, Clock } from "lucide-react";
+import { Users, AlertCircle, Search, UserCheck, UserX, Clock, Calendar, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface AttendancePanelProps {
@@ -37,7 +37,6 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
     );
   }, [students, searchQuery]);
 
-  // Summary stats based on the selected date
   const presentCount = students.filter((s) => getStudentStatus(s.roll_number) === "Present").length;
   const absentCount = students.filter((s) => getStudentStatus(s.roll_number) === "Absent").length;
   const leaveCount = students.filter((s) => getStudentStatus(s.roll_number) === "Leave").length;
@@ -56,9 +55,7 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
     }
   }
 
-  // Handle Date Change
   function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    // Input format is YYYY-MM-DD
     const val = e.target.value;
     if (!val) return;
     const [year, month, day] = val.split('-');
@@ -69,7 +66,6 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
     setAttendanceDate(formattedDate);
   }
 
-  // Convert "DD-MMM-YYYY" to "YYYY-MM-DD" for the input
   const isoDate = useMemo(() => {
     try {
       const parts = attendanceDate.split('-');
@@ -84,115 +80,118 @@ export default function AttendancePanel({ roomName }: AttendancePanelProps) {
   }, [attendanceDate]);
 
   return (
-    <div className="glass-card-static overflow-hidden animate-slide-up">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-4 border-b border-border gap-3">
-        <div className="flex items-center gap-3">
-          <Users size={20} className="text-accent" />
+    <section className="max-w-4xl w-full mx-auto bg-surface-container-lowest rounded-xl border border-outline-variant mt-6 flex flex-col h-[calc(100vh-100px)] shadow-sm animate-slide-up overflow-hidden">
+      {/* Panel Header */}
+      <div className="p-4 sm:p-5 border-b border-outline-variant flex flex-col gap-4 bg-surface-container-lowest">
+        {/* Header Top Row: Title & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-text-primary">
+            <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
+              <Users className="text-on-surface-variant" size={20} />
               Student Roster
             </h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-text-muted">
-                {students.length} student{students.length !== 1 ? "s" : ""}
-              </span>
-              <span className="text-border text-xs">•</span>
-              <input
-                type="date"
-                value={isoDate}
-                onChange={handleDateChange}
-                className="bg-surface/50 border border-border rounded text-xs px-2 py-0.5 text-text-secondary focus:outline-none focus:border-accent"
-              />
+            <div className="flex items-center gap-2 text-sm text-on-surface-variant mt-1.5 font-medium">
+              <span>{students.length} Students</span>
+              <span className="text-outline-variant">•</span>
+              <div className="flex items-center gap-1.5">
+                <Calendar size={14} className="text-primary" />
+                <input
+                  type="date"
+                  value={isoDate}
+                  onChange={handleDateChange}
+                  className="bg-transparent border-none text-sm text-primary font-bold focus:outline-none focus:ring-0 p-0 cursor-pointer"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
             disabled={!hasPendingChanges || savingSession}
-            className="btn-primary relative"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm transition-colors ${
+              hasPendingChanges && !savingSession
+                ? "bg-secondary hover:bg-secondary/90 text-on-secondary"
+                : "bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant"
+            }`}
           >
             {savingSession ? (
               <LoadingSpinner size={16} />
             ) : (
-              <Save size={16} />
+              <ShieldCheck size={18} />
             )}
-            <span className="hidden sm:inline">
-              {savingSession ? "Saving..." : "Save Attendance Session"}
-            </span>
+            {savingSession ? "Saving..." : "Save Attendance Session"}
             {hasPendingChanges && !savingSession && (
-              <span className="badge badge-emerald ml-1">{pendingCount}</span>
+              <span className="bg-on-secondary text-secondary text-xs px-2 py-0.5 rounded-full ml-1">
+                {pendingCount}
+              </span>
             )}
           </button>
         </div>
+
+        {/* Header Bottom Row: Stats & Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
+            <div className="flex items-center gap-1.5 bg-secondary-container/20 px-2 py-1 rounded text-sm whitespace-nowrap border border-secondary/10">
+              <UserCheck size={14} className="text-secondary" />
+              <span className="font-semibold text-on-surface">{presentCount}</span> <span className="text-on-surface-variant text-xs font-medium">Present</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-error-container/20 px-2 py-1 rounded text-sm whitespace-nowrap border border-error/10">
+              <UserX size={14} className="text-error" />
+              <span className="font-semibold text-on-surface">{absentCount}</span> <span className="text-on-surface-variant text-xs font-medium">Absent</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded text-sm whitespace-nowrap border border-amber-100">
+              <Clock size={14} className="text-amber-600" />
+              <span className="font-semibold text-on-surface">{unmarkedCount}</span> <span className="text-on-surface-variant text-xs font-medium">Unmarked</span>
+            </div>
+          </div>
+
+          <div className="relative w-full sm:w-auto">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+            <input
+              type="text"
+              placeholder="Search roster..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-64 bg-surface border border-outline-variant rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-colors"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="flex items-center gap-4 px-5 py-3 border-b border-border bg-surface-light/20">
-        <div className="flex items-center gap-1.5">
-          <UserCheck size={14} className="text-emerald" />
-          <span className="text-xs font-medium text-emerald">{presentCount} Present</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <UserX size={14} className="text-rose" />
-          <span className="text-xs font-medium text-rose">{absentCount} Absent</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Clock size={14} className="text-text-muted" />
-          <span className="text-xs font-medium text-text-muted">{unmarkedCount} Unmarked</span>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="px-5 py-3 border-b border-border">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-          <input
-            type="text"
-            placeholder="Search students..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input !max-w-none"
-          />
-        </div>
-      </div>
-
-      {/* Unsaved Changes Warning */}
       {hasPendingChanges && (
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-amber/5 border-b border-amber/15">
-          <AlertCircle size={14} className="text-amber" />
-          <span className="text-xs text-amber font-medium">
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 border-b border-amber-200">
+          <AlertCircle size={14} className="text-amber-600" />
+          <span className="text-xs text-amber-800 font-bold">
             {pendingCount} unsaved change{pendingCount !== 1 ? "s" : ""}. Click
-            &quot;Save Attendance Session&quot; to sync.
+            "Save Attendance Session" to sync.
           </span>
         </div>
       )}
 
       {/* Student List */}
-      <div className="max-h-[calc(100vh-380px)] overflow-y-auto">
-        {loadingStudents ? (
-          Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
-        ) : filteredStudents.length === 0 ? (
-          <div className="p-12 text-center">
-            <Users size={40} className="text-text-muted mx-auto mb-3" />
-            <p className="text-text-secondary font-medium">
-              {searchQuery ? "No matching students" : "No students found"}
-            </p>
-            <p className="text-sm text-text-muted mt-1">
-              {searchQuery
-                ? "Try a different search term"
-                : `No students are assigned to room "${roomName}".`}
-            </p>
-          </div>
-        ) : (
-          filteredStudents.map((student) => (
-            <StudentRow key={student.id} student={student} />
-          ))
-        )}
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-surface-container-lowest">
+        <ul className="divide-y divide-outline-variant">
+          {loadingStudents ? (
+            Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+          ) : filteredStudents.length === 0 ? (
+            <div className="p-12 text-center">
+              <Users size={40} className="text-outline mx-auto mb-3" />
+              <p className="text-on-surface font-bold text-lg">
+                {searchQuery ? "No matching students" : "No students found"}
+              </p>
+              <p className="text-sm font-medium text-on-surface-variant mt-1">
+                {searchQuery
+                  ? "Try a different search term"
+                  : `No students are assigned to room "${roomName}".`}
+              </p>
+            </div>
+          ) : (
+            filteredStudents.map((student) => (
+              <StudentRow key={student.id} student={student} />
+            ))
+          )}
+        </ul>
       </div>
-    </div>
+    </section>
   );
 }

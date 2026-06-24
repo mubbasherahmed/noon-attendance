@@ -11,38 +11,32 @@ interface RoomCardProps {
 
 export default function RoomCard({ room }: RoomCardProps) {
   return (
-    <div className="glass-card p-5 flex flex-col gap-4 animate-fade-in">
+    <article className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow animate-fade-in">
       {/* Room Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
-            <DoorOpen size={20} className="text-accent" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-text-primary text-sm">
-              {room.room}
-            </h3>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="bg-secondary-container/50 p-2 rounded-lg text-on-secondary-container border border-secondary-container">
+          <DoorOpen size={16} />
         </div>
+        <h3 className="font-bold text-lg text-primary">
+          {room.room}
+        </h3>
       </div>
 
       {/* Student Count */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan/10 border border-cyan/20">
-        <Users size={14} className="text-cyan" />
-        <span className="text-xs font-medium text-cyan">
+      <div className="bg-surface-container rounded-lg p-2 flex items-center gap-2 text-sm text-blue-600 font-medium border border-outline-variant/50">
+        <Users size={14} />
+        <span>
           {room.student_count} student{room.student_count !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 mt-auto">
-        <Link
-          href={`/room/${encodeURIComponent(room.room)}`}
-          className="btn-primary flex-1 text-center text-sm no-underline"
-        >
-          Take Attendance
-        </Link>
-      </div>
-    </div>
+      <Link
+        href={`/room/${encodeURIComponent(room.room)}`}
+        className="w-full bg-secondary hover:bg-secondary/90 text-on-secondary font-bold py-2 px-4 rounded-lg transition-colors mt-auto shadow-sm text-center block"
+      >
+        Take Attendance
+      </Link>
+    </article>
   );
 }
