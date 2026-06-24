@@ -1,117 +1,35 @@
 // =============================================
 // Attendance Management App — Type Definitions
+// Aligned with Supabase master_attendance table
 // =============================================
 
-export interface Campus {
-  campusName: string;
-  principalName: string;
-  numberOfStudents: number;
-  /** 1-indexed row number in the Google Sheet */
-  rowIndex: number;
+import { MasterAttendanceRow } from "./database.types";
+
+/** Re-export the row type as Student for convenience */
+export type Student = MasterAttendanceRow;
+
+/** Campus summary derived from DISTINCT campus_name */
+export interface CampusSummary {
+  campus_name: string;
+  student_count: number;
 }
 
-export interface Room {
-  roomId: string;
-  roomName: string;
-  currentSheetName: string;
-  campusName: string;
-  /** 1-indexed row number in the Google Sheet (for updates) */
-  rowIndex: number;
-}
-
-export interface Student {
-  rollNumber: string;
-  studentName: string;
-  parentName: string;
-  shift: string;
-  grade: string;
+/** Room summary derived from GROUP BY room */
+export interface RoomSummary {
   room: string;
-  roomId?: string;
-  onlineTeacher: string;
-  facilitator: string;
-  droppedOut: string;
-  pic: string;
-  status30D: string;
-  campusName: string;
-  todayStatus: "Present" | "Absent" | null;
-  /** 1-indexed row number in the Google Sheet (for updates) */
-  rowIndex: number;
+  student_count: number;
 }
 
-export interface EnrollmentData {
-  rollNumber: string;
-  studentName: string;
-  campusName: string;
-  enrollmentDate: string;
-  shift?: string;
-  grade?: string;
-  roomNumber?: string;
-  roomId?: string;
-  facilitator?: string;
-  claimedAge: string;
-  gender: string;
-  isOrphan: string;
-  deceasedParents: string;
-  medicalConditionCategory: string;
-  specifyMedicalCondition: string;
-  doesStudentWork: string;
-  studentWorkDetails: string;
-  careerGoals: string;
-  hobbies: string;
-  ooscClassification: string;
-  lastSchoolAttended: string;
-  lastGradeCompleted: string;
-  reasonForOos: string;
-  religion: string;
-  nationality: string;
-  fatherName: string;
-  relationship: string;
-  fatherEducation: string;
-  fatherProfession: string;
-  fatherIncome: string;
-  fatherCnic: string;
-  fatherCnicCheck: string;
-  numberOfSiblings: string;
-  parentContactNumber: string;
-  parentContactNumberCheck: string;
-  motherName: string;
-  motherEducation: string;
-  motherProfession: string;
-  motherIncome: string;
-  motherCnic: string;
-  motherCnicCheck: string;
-  homeAddress: string;
-  distanceToLearningCentre: string;
-  emergencyContactName: string;
-  emergencyContactNumber: string;
-  highestLevelDocument: string;
-  documentSubmitted: string;
-  bFormNumber: string;
-  bFormNumberCheck: string;
-  dobOnBForm: string;
-  currentAgeBForm: string;
-  studentPictureUploaded: string;
-  bFormUploaded: string;
-  providedUniform: string;
-  providedBooks: string;
-  providedWorkbooks: string;
-  studentProfileSorted: string;
-  studentStatus30Days: string;
-  enrollmentMonth: string;
-  monthsSinceEnrollment: string;
-  enrollmentWeek: string;
-  firstAttended: string;
-  lastAttended: string;
-  rowIndex?: number;
-}
-
+/** Single attendance status change */
 export interface AttendanceUpdate {
-  rollNumber: string;
-  status: "Present" | "Absent" | null;
+  roll_number: string;
+  status: "Present" | "Absent" | "Leave" | null;
 }
 
+/** Batch save request for attendance */
 export interface BatchSaveRequest {
-  date: string;
+  campus_name: string;
+  room: string;
   updates: AttendanceUpdate[];
 }
 
@@ -121,22 +39,19 @@ export interface BatchSaveResponse {
   errors?: string[];
 }
 
+/** Student transfer / room change request */
 export interface TransferRequest {
-  studentId: string;
-  sourceSheet: string;
-  targetSheet: string;
-  campusName: string;
+  roll_number: string;
+  campus_name: string;
+  new_campus?: string;
+  new_room?: string;
 }
 
-export interface TransferResponse {
-  success: boolean;
-  merged: boolean;
-  message: string;
-}
-
-export interface RoomSwapRequest {
-  roomId: string;
-  newSheetName: string;
+/** Batch room reassignment */
+export interface RoomReassignRequest {
+  campus_name: string;
+  roll_numbers: string[];
+  new_room: string;
 }
 
 export interface ApiError {

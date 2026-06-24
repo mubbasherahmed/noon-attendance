@@ -7,8 +7,8 @@ import ToastProvider from "@/components/ui/Toast";
 export const metadata: Metadata = {
   title: "Noon Attendance — Management Dashboard",
   description:
-    "Modern attendance management system powered by Google Sheets. Track student attendance across multiple campuses with real-time sync.",
-  keywords: ["attendance", "management", "google sheets", "dashboard"],
+    "Enterprise attendance management system powered by Supabase. Track student attendance across multiple campuses with real-time data.",
+  keywords: ["attendance", "management", "supabase", "dashboard", "noon"],
 };
 
 export default function RootLayout({

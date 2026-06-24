@@ -8,22 +8,36 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   ArrowLeft,
   DoorOpen,
-  FileSpreadsheet,
+  Users,
   AlertCircle,
-  Sparkles,
 } from "lucide-react";
-import { toast } from "sonner";
 import Link from "next/link";
 
 export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
-  const roomId = decodeURIComponent(params.roomId as string);
-  const { rooms, loadingRooms, hasPendingChanges, pendingCount } = useApp();
+  const roomName = decodeURIComponent(params.roomId as string);
+  const {
+    rooms,
+    loadingRooms,
+    hasPendingChanges,
+    pendingCount,
+    selectedCampus,
+    setSelectedRoom,
+    refreshStudents,
+  } = useApp();
 
   const [confirmLeave, setConfirmLeave] = useState(false);
 
-  const room = rooms.find((r) => r.roomId === roomId);
+  const room = rooms.find((r) => r.room === roomName);
+
+  // Set selected room and fetch students for this room
+  useEffect(() => {
+    if (roomName && selectedCampus) {
+      setSelectedRoom(roomName);
+      refreshStudents(roomName);
+    }
+  }, [roomName, selectedCampus, setSelectedRoom, refreshStudents]);
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
@@ -35,6 +49,11 @@ export default function RoomPage() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasPendingChanges]);
+
+  // Clean up selectedRoom when leaving
+  useEffect(() => {
+    return () => setSelectedRoom("");
+  }, [setSelectedRoom]);
 
   function handleBack() {
     if (hasPendingChanges) {
@@ -55,7 +74,7 @@ export default function RoomPage() {
     );
   }
 
-  if (!room) {
+  if (!room && !loadingRooms) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center glass-card-static p-10 max-w-sm">
@@ -64,7 +83,7 @@ export default function RoomPage() {
             Room Not Found
           </h2>
           <p className="text-sm text-text-muted mb-6">
-            Room &quot;{roomId}&quot; doesn&apos;t exist or is not assigned to the
+            Room &quot;{roomName}&quot; doesn&apos;t exist or is not assigned to the
             current campus.
           </p>
           <Link href="/" className="btn-primary no-underline">
@@ -79,13 +98,13 @@ export default function RoomPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b-[3px] border-accent bg-[#1e1e1e]">
+      <header className="sticky top-0 z-50 border-b border-border bg-deep-navy/80 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <button
                 onClick={handleBack}
-                className="btn-icon bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                className="btn-icon"
                 aria-label="Back to dashboard"
               >
                 <ArrowLeft size={18} />
@@ -95,13 +114,13 @@ export default function RoomPage() {
                   <span className="text-black font-bold text-xl tracking-tighter leading-none pb-0.5">noon</span>
                 </div>
                 <div>
-                  <h1 className="text-sm font-bold text-white">
-                    {room.roomName}
+                  <h1 className="text-sm font-bold text-text-primary">
+                    {roomName}
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <FileSpreadsheet size={10} className="text-emerald" />
-                    <span className="text-[11px] text-emerald font-medium">
-                      {room.currentSheetName}
+                    <Users size={10} className="text-cyan" />
+                    <span className="text-[11px] text-cyan font-medium">
+                      {room?.student_count || 0} students
                     </span>
                   </div>
                 </div>
@@ -125,27 +144,7 @@ export default function RoomPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-        {room.currentSheetName ? (
-          <AttendancePanel sheetName={room.currentSheetName} />
-        ) : (
-          <div className="glass-card-static p-12 text-center">
-            <FileSpreadsheet
-              size={48}
-              className="text-text-muted mx-auto mb-4"
-            />
-            <h3 className="text-lg font-medium text-text-secondary mb-2">
-              No Sheet Assigned
-            </h3>
-            <p className="text-sm text-text-muted max-w-md mx-auto mb-6">
-              This room doesn&apos;t have an attendance sheet assigned yet. Go back
-              to the dashboard and use the swap button to assign one.
-            </p>
-            <Link href="/" className="btn-primary no-underline">
-              <ArrowLeft size={16} />
-              Back to Dashboard
-            </Link>
-          </div>
-        )}
+        <AttendancePanel roomName={roomName} />
       </main>
 
       {/* Confirm Leave Modal */}

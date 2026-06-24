@@ -1,81 +1,97 @@
-// POST /api/attendance — Batch save attendance counter increments
-// Receives { updates: [{ studentId, incrementBy }] }
-// Performs a single batchUpdate to Google Sheets
+// POST /api/attendance — Batch save attendance for a room session
+// Receives { campus_name, room, updates: [{ roll_number, status }] }
+// Updates present_status_current_date and increments session counters
 import { NextRequest, NextResponse } from "next/server";
-import { getStudents, batchUpdateValues, getSheetData } from "@/lib/google-sheets";
-import { BatchSaveRequest, BatchSaveResponse } from "@/lib/types";
-
-function colIndexToLetter(index: number): string {
-  let letter = "";
-  let temp = index;
-  while (temp >= 0) {
-    letter = String.fromCharCode((temp % 26) + 65) + letter;
-    temp = Math.floor(temp / 26) - 1;
-  }
-  return letter;
-}
+import { createServerClient } from "@/lib/supabaseClient";
+import { BatchSaveRequest } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
     const body: BatchSaveRequest = await request.json();
-    const { updates, date } = body;
+    const { campus_name, room, updates } = body;
 
-    if (!updates || !Array.isArray(updates) || updates.length === 0 || !date) {
+    if (!campus_name || !room || !updates?.length) {
       return NextResponse.json(
-        { error: "updates array and date are required" },
+        { error: "campus_name, room, and updates[] are required" },
         { status: 400 }
       );
     }
 
-    const allStudents = await getStudents();
+    const supabase = createServerClient();
     const errors: string[] = [];
-    const batchData: { range: string; values: (string | number)[][] }[] = [];
+    let updatedCount = 0;
 
-    // Find the date column
-    const headerRows = await getSheetData("Attendance!A1:ZZ1");
-    const headers = headerRows[0] || [];
-    let dateColIndex = headers.findIndex((h) => h?.trim() === date.trim());
-
-    if (dateColIndex === -1) {
-      // Create new column for this date
-      dateColIndex = headers.length;
-      if (dateColIndex < 11) dateColIndex = 11; // Start from column L if somehow empty
-      const letter = colIndexToLetter(dateColIndex);
-      batchData.push({
-        range: `Attendance!${letter}1`,
-        values: [[date]],
-      });
-    }
-
-    const colLetter = colIndexToLetter(dateColIndex);
-
+    // Process each update individually to handle session counter increments
     for (const update of updates) {
-      const student = allStudents.find((s) => s.rollNumber === update.rollNumber);
-      if (!student) {
-        errors.push(`Student "${update.rollNumber}" not found`);
+      if (!update.roll_number || !update.status) continue;
+
+      // Build the update payload
+      const updatePayload: Record<string, unknown> = {
+        present_status_current_date: update.status,
+      };
+
+      // Fetch current row to determine if we need to adjust counters
+      const { data: current, error: fetchError } = await supabase
+        .from("master_attendance")
+        .select("*")
+        .eq("campus_name", campus_name)
+        .eq("room", room)
+        .eq("roll_number", update.roll_number)
+        .single();
+
+      if (fetchError || !current) {
+        errors.push(`Student "${update.roll_number}" not found`);
         continue;
       }
 
-      if (!update.status) continue; // Unselected
+      const previousStatus = current.present_status_current_date;
+      const today = new Date().toISOString().split("T")[0];
 
-      batchData.push({
-        range: `Attendance!${colLetter}${student.rowIndex}`,
-        values: [[update.status]],
-      });
+      // Decrement previous status counter if changing
+      if (previousStatus && previousStatus !== update.status) {
+        if (previousStatus === "Present") {
+          updatePayload.sessions_present = Math.max(0, (current.sessions_present || 0) - 1);
+        } else if (previousStatus === "Absent") {
+          updatePayload.sessions_absent = Math.max(0, (current.sessions_absent || 0) - 1);
+        } else if (previousStatus === "Leave") {
+          updatePayload.sessions_on_leave = Math.max(0, (current.sessions_on_leave || 0) - 1);
+        }
+      }
+
+      // Increment new status counter
+      if (previousStatus !== update.status) {
+        if (update.status === "Present") {
+          updatePayload.sessions_present = ((updatePayload.sessions_present as number) ?? current.sessions_present ?? 0) + 1;
+          updatePayload.last_attended = today;
+          if (!current.first_attended) {
+            updatePayload.first_attended = today;
+          }
+        } else if (update.status === "Absent") {
+          updatePayload.sessions_absent = ((updatePayload.sessions_absent as number) ?? current.sessions_absent ?? 0) + 1;
+        } else if (update.status === "Leave") {
+          updatePayload.sessions_on_leave = ((updatePayload.sessions_on_leave as number) ?? current.sessions_on_leave ?? 0) + 1;
+        }
+      }
+
+      const { error } = await supabase
+        .from("master_attendance")
+        .update(updatePayload)
+        .eq("campus_name", campus_name)
+        .eq("room", room)
+        .eq("roll_number", update.roll_number);
+
+      if (error) {
+        errors.push(`Failed to update "${update.roll_number}": ${error.message}`);
+      } else {
+        updatedCount++;
+      }
     }
 
-    let updatedCount = 0;
-    if (batchData.length > 0) {
-      updatedCount = await batchUpdateValues(batchData);
-    }
-
-    const response: BatchSaveResponse = {
+    return NextResponse.json({
       success: errors.length === 0,
       updatedCount,
       errors: errors.length > 0 ? errors : undefined,
-    };
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
     console.error("Failed to batch save attendance:", error);
     return NextResponse.json(

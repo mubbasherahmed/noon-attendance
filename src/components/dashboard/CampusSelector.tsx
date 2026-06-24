@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useApp } from "@/context/AppContext";
-import { Building2, ChevronDown } from "lucide-react";
+import { Building2 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function CampusSelector() {
@@ -13,7 +13,7 @@ export default function CampusSelector() {
     return (
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface border border-border">
         <LoadingSpinner size={18} />
-        <span className="text-sm text-text-secondary">Loading campuses...</span>
+        <span className="text-sm text-text-secondary">Loading...</span>
       </div>
     );
   }
@@ -22,7 +22,7 @@ export default function CampusSelector() {
     return (
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface border border-border">
         <Building2 size={18} className="text-text-muted" />
-        <span className="text-sm text-text-secondary">No campuses found</span>
+        <span className="text-sm text-text-secondary">No campuses</span>
       </div>
     );
   }
@@ -30,17 +30,17 @@ export default function CampusSelector() {
   return (
     <div className="relative flex items-center gap-3">
       <div className="absolute left-3 pointer-events-none text-accent z-10">
-        <Building2 size={18} />
+        <Building2 size={16} />
       </div>
       <select
         id="campus-selector"
         value={selectedCampus}
         onChange={(e) => setSelectedCampus(e.target.value)}
-        className="select-glass pl-10 pr-10 py-2.5 min-w-[200px]"
+        className="select-glass pl-10 pr-10 py-2 min-w-[180px] text-sm"
       >
         {campuses.map((campus) => (
-          <option key={campus.campusName} value={campus.campusName}>
-            {campus.campusName}
+          <option key={campus.campus_name} value={campus.campus_name}>
+            {campus.campus_name} ({campus.student_count})
           </option>
         ))}
       </select>

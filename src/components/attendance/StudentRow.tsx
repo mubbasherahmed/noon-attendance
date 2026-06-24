@@ -3,7 +3,7 @@
 import React from "react";
 import { Student } from "@/lib/types";
 import { useApp } from "@/context/AppContext";
-import { User } from "lucide-react";
+import { User, Check, X, Clock } from "lucide-react";
 
 interface StudentRowProps {
   student: Student;
@@ -11,91 +11,86 @@ interface StudentRowProps {
 
 export default function StudentRow({ student }: StudentRowProps) {
   const { getStudentStatus, setStudentStatus } = useApp();
-  const currentStatus = getStudentStatus(student.rollNumber);
+  const currentStatus = getStudentStatus(student.roll_number);
+
+  const toggleStatus = (status: "Present" | "Absent" | "Leave") => {
+    setStudentStatus(
+      student.roll_number,
+      currentStatus === status ? null : status
+    );
+  };
 
   return (
-    <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 border-b border-border last:border-b-0 hover:bg-surface-hover/30 transition-colors">
-      {/* Student Info */}
-      <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-        <User size={16} className="text-accent-hover" />
+    <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 border-b border-border last:border-b-0 hover:bg-surface-hover/50 transition-colors">
+      {/* Student Avatar */}
+      <div className="shrink-0">
+        {student.pic ? (
+          <img
+            src={student.pic}
+            alt=""
+            className="w-10 h-10 rounded-full object-cover border border-border"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+            <User size={18} className="text-accent" />
+          </div>
+        )}
       </div>
 
+      {/* Student Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-text-primary truncate">
-          {student.studentName}
+          {student.student_name}
         </p>
-        <p className="text-xs text-text-muted mt-0.5">
-          Roll: {student.rollNumber}
-        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs text-text-muted">
+            Roll: {student.roll_number}
+          </span>
+          {student.status_30d && (
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+              student.status_30d.toLowerCase().includes("active") ? "bg-emerald/10 text-emerald" :
+              student.status_30d.toLowerCase().includes("drop") ? "bg-rose/10 text-rose" :
+              "bg-surface-light text-text-muted"
+            }`}>
+              {student.status_30d}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Attendance Radio Buttons */}
-      <div className="flex items-center gap-4 shrink-0 ml-auto mr-2 sm:mr-4">
-        <label className="flex items-center gap-1.5 cursor-pointer group select-none">
-          <div
-            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-              currentStatus === "Present"
-                ? "border-emerald bg-emerald/10"
-                : "border-text-muted group-hover:border-emerald/50"
-            }`}
-          >
-            {currentStatus === "Present" && (
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald" />
-            )}
-          </div>
-          <span
-            className={`text-sm font-medium ${
-              currentStatus === "Present" ? "text-emerald" : "text-text-secondary group-hover:text-text-primary"
-            }`}
-          >
-            Present
-          </span>
-          <input
-            type="radio"
-            className="hidden"
-            checked={currentStatus === "Present"}
-            onChange={() =>
-              setStudentStatus(
-                student.rollNumber,
-                currentStatus === "Present" ? null : "Present"
-              )
-            }
-          />
-        </label>
+      {/* Attendance Toggles — Large touch targets */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Present */}
+        <button
+          onClick={() => toggleStatus("Present")}
+          className={`attendance-toggle ${currentStatus === "Present" ? "present" : "unmarked"}`}
+          aria-label="Mark present"
+        >
+          <Check size={16} strokeWidth={currentStatus === "Present" ? 3 : 2} />
+          <span className="text-xs font-medium hidden sm:inline">P</span>
+        </button>
 
-        <label className="flex items-center gap-1.5 cursor-pointer group select-none">
-          <div
-            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-              currentStatus === "Absent"
-                ? "border-rose bg-rose/10"
-                : "border-text-muted group-hover:border-rose/50"
-            }`}
-          >
-            {currentStatus === "Absent" && (
-              <div className="w-2.5 h-2.5 rounded-full bg-rose" />
-            )}
-          </div>
-          <span
-            className={`text-sm font-medium ${
-              currentStatus === "Absent" ? "text-rose" : "text-text-secondary group-hover:text-text-primary"
-            }`}
-          >
-            Absent
-          </span>
-          <input
-            type="radio"
-            className="hidden"
-            checked={currentStatus === "Absent"}
-            onChange={() =>
-              setStudentStatus(
-                student.rollNumber,
-                currentStatus === "Absent" ? null : "Absent"
-              )
-            }
-          />
-        </label>
+        {/* Absent */}
+        <button
+          onClick={() => toggleStatus("Absent")}
+          className={`attendance-toggle ${currentStatus === "Absent" ? "absent" : "unmarked"}`}
+          aria-label="Mark absent"
+        >
+          <X size={16} strokeWidth={currentStatus === "Absent" ? 3 : 2} />
+          <span className="text-xs font-medium hidden sm:inline">A</span>
+        </button>
+
+        {/* Leave */}
+        <button
+          onClick={() => toggleStatus("Leave")}
+          className={`attendance-toggle ${currentStatus === "Leave" ? "leave" : "unmarked"}`}
+          aria-label="Mark leave"
+        >
+          <Clock size={16} strokeWidth={currentStatus === "Leave" ? 3 : 2} />
+          <span className="text-xs font-medium hidden sm:inline">L</span>
+        </button>
       </div>
-
     </div>
   );
 }

@@ -8,40 +8,41 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { Room, Student, AttendanceUpdate, Campus } from "@/lib/types";
+import { Student, CampusSummary, RoomSummary, AttendanceUpdate } from "@/lib/types";
 
 // =============================================
-// App Context — Campus, Rooms, Students, and
-// Optimistic Attendance State
+// App Context — Supabase-backed state management
+// Campus → Rooms → Students → Attendance
 // =============================================
 
 interface PendingChange {
-  rollNumber: string;
-  status: "Present" | "Absent" | null;
+  roll_number: string;
+  status: "Present" | "Absent" | "Leave" | null;
 }
 
 interface AppContextType {
   // Campus
-  campuses: Campus[];
+  campuses: CampusSummary[];
   selectedCampus: string;
   setSelectedCampus: (campus: string) => void;
   loadingCampuses: boolean;
 
   // Rooms
-  rooms: Room[];
-  sheetNames: string[];
+  rooms: RoomSummary[];
   loadingRooms: boolean;
   refreshRooms: () => Promise<void>;
 
   // Students
   students: Student[];
   loadingStudents: boolean;
-  refreshStudents: (sheetFilter?: string) => Promise<void>;
+  refreshStudents: (room?: string) => Promise<void>;
+  selectedRoom: string;
+  setSelectedRoom: (room: string) => void;
 
   // Attendance (optimistic)
   pendingChanges: Map<string, PendingChange>;
-  getStudentStatus: (rollNumber: string) => "Present" | "Absent" | null;
-  setStudentStatus: (rollNumber: string, status: "Present" | "Absent" | null) => void;
+  getStudentStatus: (rollNumber: string) => "Present" | "Absent" | "Leave" | null;
+  setStudentStatus: (rollNumber: string, status: "Present" | "Absent" | "Leave" | null) => void;
   hasPendingChanges: boolean;
   pendingCount: number;
   saveSession: () => Promise<{ success: boolean; error?: string }>;
@@ -49,28 +50,29 @@ interface AppContextType {
   resetPending: () => void;
 
   // CRUD
-  addStudent: (student: Partial<Student>) => Promise<{ success: boolean; error?: string }>;
-  updateStudent: (student: Student) => Promise<{ success: boolean; error?: string }>;
-  deleteStudent: (rowIndex: number) => Promise<{ success: boolean; error?: string }>;
+  updateStudent: (id: number, updates: Partial<Student>) => Promise<{ success: boolean; error?: string }>;
+  deleteStudent: (id: number) => Promise<{ success: boolean; error?: string }>;
+
+  // Room management
+  reassignRooms: (rollNumbers: string[], newRoom: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   // ── Campus State ──
-  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [campuses, setCampuses] = useState<CampusSummary[]>([]);
   const [selectedCampus, setSelectedCampus] = useState<string>("");
   const [loadingCampuses, setLoadingCampuses] = useState(true);
 
   // ── Rooms State ──
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
   // ── Students State ──
   const [students, setStudents] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [currentSheetFilter, setCurrentSheetFilter] = useState<string | undefined>();
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
 
   // ── Pending Attendance Changes ──
   const [pendingChanges, setPendingChanges] = useState<Map<string, PendingChange>>(
@@ -85,9 +87,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLoadingCampuses(true);
         const res = await fetch("/api/campuses");
         const data = await res.json();
-        if (data.campuses && data.campuses.length > 0) {
+        if (data.campuses?.length > 0) {
           setCampuses(data.campuses);
-          setSelectedCampus(data.campuses[0].campusName);
+          setSelectedCampus(data.campuses[0].campus_name);
         }
       } catch (error) {
         console.error("Failed to fetch campuses:", error);
@@ -108,7 +110,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       const data = await res.json();
       setRooms(data.rooms || []);
-      setSheetNames(data.sheetNames || []);
     } catch (error) {
       console.error("Failed to fetch rooms:", error);
     } finally {
@@ -119,20 +120,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (selectedCampus) {
       refreshRooms();
+      setSelectedRoom("");
     }
   }, [selectedCampus, refreshRooms]);
 
   // ── Fetch Students ──
   const refreshStudents = useCallback(
-    async (sheetFilter?: string) => {
+    async (room?: string) => {
       if (!selectedCampus) return;
-      setCurrentSheetFilter(sheetFilter);
       try {
         setLoadingStudents(true);
-        const today = new Date().toISOString().split('T')[0];
-        let url = `/api/students?campus=${encodeURIComponent(selectedCampus)}&date=${today}`;
-        if (sheetFilter) {
-          url += `&sheet=${encodeURIComponent(sheetFilter)}`;
+        let url = `/api/students?campus=${encodeURIComponent(selectedCampus)}`;
+        const roomFilter = room || selectedRoom;
+        if (roomFilter) {
+          url += `&room=${encodeURIComponent(roomFilter)}`;
         }
         const res = await fetch(url);
         const data = await res.json();
@@ -143,30 +144,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLoadingStudents(false);
       }
     },
-    [selectedCampus]
+    [selectedCampus, selectedRoom]
   );
 
   // ── Optimistic Status Helpers ──
   const getStudentStatus = useCallback(
-    (rollNumber: string): "Present" | "Absent" | null => {
+    (rollNumber: string): "Present" | "Absent" | "Leave" | null => {
       const pending = pendingChanges.get(rollNumber);
       if (pending) return pending.status;
-      const student = students.find((s) => s.rollNumber === rollNumber);
-      return student?.todayStatus || null;
+      const student = students.find((s) => s.roll_number === rollNumber);
+      return (student?.present_status_current_date as "Present" | "Absent" | "Leave") || null;
     },
     [pendingChanges, students]
   );
 
   const setStudentStatus = useCallback(
-    (rollNumber: string, status: "Present" | "Absent" | null) => {
+    (rollNumber: string, status: "Present" | "Absent" | "Leave" | null) => {
       setPendingChanges((prev) => {
         const next = new Map(prev);
-        const student = students.find((s) => s.rollNumber === rollNumber);
-        
-        if (student?.todayStatus === status) {
+        const student = students.find((s) => s.roll_number === rollNumber);
+        const currentDbStatus = student?.present_status_current_date || null;
+
+        if (currentDbStatus === status) {
           next.delete(rollNumber);
         } else {
-          next.set(rollNumber, { rollNumber, status });
+          next.set(rollNumber, { roll_number: rollNumber, status });
         }
         return next;
       });
@@ -190,15 +192,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { success: true };
     }
 
-    const updates: AttendanceUpdate[] = Array.from(pendingChanges.values());
+    const updates: AttendanceUpdate[] = Array.from(pendingChanges.values()).map(
+      (change) => ({
+        roll_number: change.roll_number,
+        status: change.status,
+      })
+    );
 
     try {
       setSavingSession(true);
-      const today = new Date().toISOString().split('T')[0];
       const res = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ updates, date: today }),
+        body: JSON.stringify({
+          campus_name: selectedCampus,
+          room: selectedRoom,
+          updates,
+        }),
       });
 
       const data = await res.json();
@@ -209,7 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // Clear pending changes and refresh students
       setPendingChanges(new Map());
-      await refreshStudents(currentSheetFilter);
+      await refreshStudents(selectedRoom);
 
       return { success: true };
     } catch (error) {
@@ -217,49 +227,72 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setSavingSession(false);
     }
-  }, [pendingChanges, refreshStudents, currentSheetFilter]);
+  }, [pendingChanges, selectedCampus, selectedRoom, refreshStudents]);
 
   // ── CRUD Operations ──
-  const addStudent = useCallback(async (student: Partial<Student>) => {
-    try {
-      const res = await fetch("/api/students", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(student),
-      });
-      const data = await res.json();
-      if (res.ok) await refreshStudents(currentSheetFilter);
-      return { success: res.ok, error: data.error };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }, [refreshStudents, currentSheetFilter]);
+  const updateStudent = useCallback(
+    async (id: number, updates: Partial<Student>) => {
+      try {
+        const res = await fetch("/api/students", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, ...updates }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          await refreshStudents(selectedRoom);
+          await refreshRooms();
+        }
+        return { success: res.ok, error: data.error };
+      } catch (e) {
+        return { success: false, error: String(e) };
+      }
+    },
+    [refreshStudents, selectedRoom, refreshRooms]
+  );
 
-  const updateStudent = useCallback(async (student: Student) => {
-    try {
-      const res = await fetch("/api/students", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(student),
-      });
-      const data = await res.json();
-      if (res.ok) await refreshStudents(currentSheetFilter);
-      return { success: res.ok, error: data.error };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }, [refreshStudents, currentSheetFilter]);
+  const deleteStudent = useCallback(
+    async (id: number) => {
+      try {
+        const res = await fetch(`/api/students?id=${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (res.ok) {
+          await refreshStudents(selectedRoom);
+          await refreshRooms();
+        }
+        return { success: res.ok, error: data.error };
+      } catch (e) {
+        return { success: false, error: String(e) };
+      }
+    },
+    [refreshStudents, selectedRoom, refreshRooms]
+  );
 
-  const deleteStudent = useCallback(async (rowIndex: number) => {
-    try {
-      const res = await fetch(`/api/students?rowIndex=${rowIndex}`, { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok) await refreshStudents(currentSheetFilter);
-      return { success: res.ok, error: data.error };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }, [refreshStudents, currentSheetFilter]);
+  // ── Room Management ──
+  const reassignRooms = useCallback(
+    async (rollNumbers: string[], newRoom: string) => {
+      try {
+        const res = await fetch("/api/rooms", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            campus_name: selectedCampus,
+            roll_numbers: rollNumbers,
+            new_room: newRoom,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          await refreshStudents(selectedRoom);
+          await refreshRooms();
+        }
+        return { success: res.ok, error: data.error };
+      } catch (e) {
+        return { success: false, error: String(e) };
+      }
+    },
+    [selectedCampus, refreshStudents, selectedRoom, refreshRooms]
+  );
 
   return (
     <AppContext.Provider
@@ -269,12 +302,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSelectedCampus,
         loadingCampuses,
         rooms,
-        sheetNames,
         loadingRooms,
         refreshRooms,
         students,
         loadingStudents,
         refreshStudents,
+        selectedRoom,
+        setSelectedRoom,
         pendingChanges,
         getStudentStatus,
         setStudentStatus,
@@ -283,9 +317,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSession,
         savingSession,
         resetPending,
-        addStudent,
         updateStudent,
         deleteStudent,
+        reassignRooms,
       }}
     >
       {children}

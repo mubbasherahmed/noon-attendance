@@ -1,12 +1,33 @@
-// GET /api/campuses — Return unique campus names
+// GET /api/campuses — Derive distinct campus names from master_attendance
 import { NextResponse } from "next/server";
-import { getCampuses } from "@/lib/google-sheets";
+import { createServerClient } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const campuses = await getCampuses();
+    const supabase = createServerClient();
+
+    // Get distinct campus names with student counts
+    const { data, error } = await supabase
+      .from("master_attendance")
+      .select("campus_name");
+
+    if (error) throw error;
+
+    // Aggregate in JS since Supabase doesn't support GROUP BY directly via select
+    const campusMap = new Map<string, number>();
+    (data || []).forEach((row) => {
+      const name = row.campus_name;
+      if (name) {
+        campusMap.set(name, (campusMap.get(name) || 0) + 1);
+      }
+    });
+
+    const campuses = Array.from(campusMap.entries())
+      .map(([campus_name, student_count]) => ({ campus_name, student_count }))
+      .sort((a, b) => a.campus_name.localeCompare(b.campus_name));
+
     return NextResponse.json({ campuses });
   } catch (error) {
     console.error("Failed to fetch campuses:", error);

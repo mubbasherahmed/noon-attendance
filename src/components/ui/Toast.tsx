@@ -8,11 +8,12 @@ export default function ToastProvider() {
       position="top-right"
       toastOptions={{
         style: {
-          background: "#1e2538",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
+          background: "#151b2e",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
           color: "#f1f5f9",
-          borderRadius: "12px",
+          borderRadius: "14px",
           fontSize: "0.875rem",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
         },
       }}
       richColors
