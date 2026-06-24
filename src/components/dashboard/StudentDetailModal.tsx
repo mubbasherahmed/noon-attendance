@@ -31,7 +31,7 @@ export default function StudentDetailModal({
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     student_name: student.student_name,
-    guardian_name: student.guardian_name || "",
+    gaurdian_name: student.gaurdian_name || "",
     gender: student.gender || "",
     shift: student.shift || "",
     grade: student.grade || "",
@@ -65,38 +65,6 @@ export default function StudentDetailModal({
     }
   };
 
-  const dailyRetention = [
-    { label: "D-6", value: student.present_status_day_minus_6 },
-    { label: "D-5", value: student.present_status_day_minus_5 },
-    { label: "D-4", value: student.present_status_day_minus_4 },
-    { label: "D-3", value: student.present_status_day_minus_3 },
-    { label: "D-2", value: student.present_status_day_minus_2 },
-    { label: "D-1", value: student.present_status_day_minus_1 },
-    { label: "Today", value: student.present_status_current_date },
-  ];
-
-  const weeklyRetention = [
-    { label: "W-4", value: student.present_status_week_minus_4 },
-    { label: "W-3", value: student.present_status_week_minus_3 },
-    { label: "W-2", value: student.present_status_week_minus_2 },
-    { label: "W-1", value: student.present_status_week_minus_1 },
-    { label: "This Week", value: student.present_status_current_week },
-  ];
-
-  const monthlyRetention = [
-    { label: "M-2", value: student.present_status_month_minus_2 },
-    { label: "M-1", value: student.present_status_month_minus_1 },
-    { label: "Current", value: student.present_status_month },
-  ];
-
-  const getRetentionColor = (val: string | null) => {
-    if (!val) return "empty";
-    const v = val.toLowerCase();
-    if (v === "present" || v.includes("yes") || v.includes("active")) return "present";
-    if (v === "absent" || v.includes("no") || v.includes("inactive")) return "absent";
-    if (v === "leave") return "leave";
-    return "empty";
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>

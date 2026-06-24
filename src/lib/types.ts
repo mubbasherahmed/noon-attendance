@@ -9,12 +9,12 @@ export type Student = EnrollmentRow;
 // Derived summaries used in dashboard/navigation
 export interface CampusSummary {
   campus_name: string;
-  studentCount: number;
+  student_count: number;
 }
 
 export interface RoomSummary {
   room: string;
-  studentCount: number;
+  student_count: number;
 }
 
 // =============================================
