@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../src";
 
 @theme {
   --color-appBg: #f8f9fa;
