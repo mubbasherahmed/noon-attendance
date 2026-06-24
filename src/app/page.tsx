@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-type SortKey = "roll_number" | "student_name" | "grade" | "room" | "sessions_present" | "sessions_absent" | "status_30d";
+type SortKey = "roll_number" | "student_name" | "grade" | "room" | "age" | "student_status";
 type SortDir = "asc" | "desc";
 type ViewMode = "rooms" | "table";
 
@@ -83,19 +83,15 @@ export default function HomePage() {
 
     if (statusFilter !== "all") {
       if (statusFilter === "active") {
-        result = result.filter((s) => s.dropped_out !== "Yes" && s.dropped_out !== "TRUE");
+        result = result.filter((s) => s.student_status === "Active" || s.student_status === "Regular");
       } else if (statusFilter === "dropped") {
-        result = result.filter((s) => s.dropped_out === "Yes" || s.dropped_out === "TRUE");
-      } else if (statusFilter === "present") {
-        result = result.filter((s) => s.present_status_current_date === "Present");
-      } else if (statusFilter === "absent") {
-        result = result.filter((s) => s.present_status_current_date === "Absent");
+        result = result.filter((s) => s.student_status === "Dropped Out");
       }
     }
 
     result.sort((a, b) => {
-      const aVal = a[sortKey] ?? "";
-      const bVal = b[sortKey] ?? "";
+      const aVal = a[sortKey as keyof Student] ?? "";
+      const bVal = b[sortKey as keyof Student] ?? "";
       const cmp = typeof aVal === "number" && typeof bVal === "number"
         ? aVal - bVal
         : String(aVal).localeCompare(String(bVal));
@@ -107,9 +103,11 @@ export default function HomePage() {
 
   // Stats
   const totalStudents = students.length;
-  const presentToday = students.filter((s) => s.present_status_current_date === "Present").length;
-  const absentToday = students.filter((s) => s.present_status_current_date === "Absent").length;
-  const attendancePct = totalStudents > 0 ? Math.round((presentToday / totalStudents) * 100) : 0;
+  const activeStudents = students.filter((s) => s.student_status === "Active" || s.student_status === "Regular").length;
+  const droppedStudents = students.filter((s) => s.student_status === "Dropped Out").length;
+  // NOTE: Attendance rates are now calculated dynamically per date, so we leave this blank for the main dashboard 
+  // or fetch them from the new API. For now, we will show active vs dropped stats.
+  const attendancePct = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -234,8 +232,8 @@ export default function HomePage() {
                 <UserCheck size={16} className="text-emerald" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-text-primary">{presentToday}</p>
-            <p className="text-xs text-text-muted mt-0.5">Present Today</p>
+            <p className="text-2xl font-bold text-text-primary">{activeStudents}</p>
+            <p className="text-xs text-text-muted mt-0.5">Active Students</p>
           </div>
 
           <div className="stat-card stat-card-rose">
@@ -244,8 +242,8 @@ export default function HomePage() {
                 <UserX size={16} className="text-rose" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-text-primary">{absentToday}</p>
-            <p className="text-xs text-text-muted mt-0.5">Absent Today</p>
+            <p className="text-2xl font-bold text-text-primary">{droppedStudents}</p>
+            <p className="text-xs text-text-muted mt-0.5">Dropped Out</p>
           </div>
 
           <div className="stat-card stat-card-amber">
@@ -257,7 +255,7 @@ export default function HomePage() {
             <p className="text-2xl font-bold text-text-primary">
               {attendancePct}<span className="text-sm font-normal text-text-muted">%</span>
             </p>
-            <p className="text-xs text-text-muted mt-0.5">Attendance Rate</p>
+            <p className="text-xs text-text-muted mt-0.5">Active Rate</p>
           </div>
         </div>
 
@@ -424,17 +422,13 @@ export default function HomePage() {
                         Room <SortIcon col="room" />
                       </th>
                       <th>Shift</th>
-                      <th>Today</th>
-                      <th onClick={() => toggleSort("sessions_present")} className={sortKey === "sessions_present" ? "sorted" : ""}>
-                        Present <SortIcon col="sessions_present" />
+                      <th onClick={() => toggleSort("age" as SortKey)} className={sortKey === "age" ? "sorted" : ""}>
+                        Age <SortIcon col={"age" as SortKey} />
                       </th>
-                      <th onClick={() => toggleSort("sessions_absent")} className={sortKey === "sessions_absent" ? "sorted" : ""}>
-                        Absent <SortIcon col="sessions_absent" />
+                      <th>Contact Number</th>
+                      <th onClick={() => toggleSort("student_status" as SortKey)} className={sortKey === "student_status" ? "sorted" : ""}>
+                        Status <SortIcon col={"student_status" as SortKey} />
                       </th>
-                      <th onClick={() => toggleSort("status_30d")} className={sortKey === "status_30d" ? "sorted" : ""}>
-                        Status (30D) <SortIcon col="status_30d" />
-                      </th>
-                      <th>Retention</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -457,54 +451,21 @@ export default function HomePage() {
                         <td className="font-mono text-xs text-text-muted">{student.roll_number}</td>
                         <td>
                           <div className="flex items-center gap-2.5">
-                            {student.pic ? (
-                              <img
-                                src={student.pic}
-                                alt=""
-                                className="w-7 h-7 rounded-full object-cover border border-border"
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-bold text-accent">
-                                {student.student_name?.charAt(0)?.toUpperCase()}
-                              </div>
-                            )}
+                            <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-bold text-accent">
+                              {student.student_name?.charAt(0)?.toUpperCase()}
+                            </div>
                             <span className="font-medium text-text-primary">{student.student_name}</span>
                           </div>
                         </td>
-                        <td>{student.guardian_name || "—"}</td>
+                        <td>{student.gaurdian_name || "—"}</td>
                         <td>{student.grade || "—"}</td>
                         <td>
                           <span className="badge badge-cyan">{student.room}</span>
                         </td>
                         <td>{student.shift || "—"}</td>
-                        <td>{getTodayBadge(student.present_status_current_date)}</td>
-                        <td className="text-emerald font-medium">{student.sessions_present}</td>
-                        <td className="text-rose font-medium">{student.sessions_absent}</td>
-                        <td>{getStatusBadge(student.status_30d)}</td>
-                        <td>
-                          <div className="flex gap-0.5">
-                            {[
-                              student.present_status_day_minus_6,
-                              student.present_status_day_minus_5,
-                              student.present_status_day_minus_4,
-                              student.present_status_day_minus_3,
-                              student.present_status_day_minus_2,
-                              student.present_status_day_minus_1,
-                              student.present_status_current_date,
-                            ].map((day, i) => (
-                              <span
-                                key={i}
-                                className={`retention-dot ${
-                                  day === "Present" ? "present" :
-                                  day === "Absent" ? "absent" :
-                                  day === "Leave" ? "leave" : "empty"
-                                }`}
-                                title={`Day ${i === 6 ? "today" : `-${6 - i}`}: ${day || "—"}`}
-                              />
-                            ))}
-                          </div>
-                        </td>
+                        <td>{student.age || "—"}</td>
+                        <td>{student.contact_number || "—"}</td>
+                        <td>{getStatusBadge(student.student_status)}</td>
                       </tr>
                     ))}
                   </tbody>
